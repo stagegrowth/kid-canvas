@@ -32,3 +32,6 @@ Thumbs.db
 
 # 그러나 docs 폴더의 .md는 추적
 !docs/*.md
+
+# Windows NTFS 보안 메타데이터 (WSL에서 보임)
+*:Zone.Identifier
