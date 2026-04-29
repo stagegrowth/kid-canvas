@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
  * 외곽선 PNG 가 없을 때 보여주는 임시 placeholder.
  * Compose 만으로 큰 원(얼굴) + 작은 원 두 개(눈)를 그려 5살이 색칠해 볼 수 있는 단순 도안 흉내.
  *
- * 빌드 도구가 outlines/*.png 를 채우면 이 placeholder 자리에 AsyncImage 로 교체됨.
+ * 빌드 도구가 outlines 폴더의 PNG 를 채우면 이 placeholder 자리에 AsyncImage 로 교체됨.
  */
 @Composable
 fun OutlinePlaceholder(modifier: Modifier = Modifier) {
