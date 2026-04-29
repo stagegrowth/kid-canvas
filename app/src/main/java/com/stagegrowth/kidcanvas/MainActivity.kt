@@ -97,6 +97,7 @@ private fun AppRoot(modifier: Modifier = Modifier) {
             val vm: DrawingViewModel = hiltViewModel(key = "drawing:${r.targetId}")
             LaunchedEffect(r.targetId) { vm.setTargetId(r.targetId) }
             DrawingScreen(
+                onBack = { route = AppRoute.Picker(r.fromCategoryId) },
                 viewModel = vm,
                 modifier = modifier,
             )

@@ -43,6 +43,7 @@ import coil.compose.AsyncImage
 @Composable
 fun DrawingScreen(
     modifier: Modifier = Modifier,
+    onBack: () -> Unit = {},
     viewModel: DrawingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,7 +57,7 @@ fun DrawingScreen(
         TopActionBar(
             title = uiState.targetName,
             currentTool = uiState.currentTool,
-            onBack = { /* M7 NavGraph 도입 시 */ },
+            onBack = onBack,
             onToolSelected = viewModel::changeTool,
             onUndo = viewModel::undo,
             onResetRequest = { showResetDialog = true },
