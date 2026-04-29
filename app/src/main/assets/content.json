@@ -4,14 +4,157 @@
   "categories": [
     {
       "id": "tinyping",
-      "name": "티니핑",
-      "themeColor": "#FFC0CB",
+      "name": "캐치 티니핑",
+      "themeColor": "#FF5A8C",
       "thumbnail": "thumbs/tinyping.png",
       "targets": [
-        { "id": "tp_hachu",  "name": "하츄핑",  "outline": "outlines/tp_hachu.png",  "thumbnail": "thumbs/tp_hachu.png",  "addedAt": 0 },
-        { "id": "tp_lakuna", "name": "라쿠핑",  "outline": "outlines/tp_lakuna.png", "thumbnail": "thumbs/tp_lakuna.png", "addedAt": 0 },
-        { "id": "tp_meri",   "name": "메리핑",  "outline": "outlines/tp_meri.png",   "thumbnail": "thumbs/tp_meri.png",   "addedAt": 0 },
-        { "id": "tp_jellie", "name": "젤리핑",  "outline": "outlines/tp_jellie.png", "thumbnail": "thumbs/tp_jellie.png", "addedAt": 0 }
+        {
+          "id": "tp_berryhachu",
+          "name": "베리하츄핑",
+          "outline": "outlines/tp_berryhachu.png",
+          "thumbnail": "thumbs/tp_berryhachu.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_posil",
+          "name": "포실핑",
+          "outline": "outlines/tp_posil.png",
+          "thumbnail": "thumbs/tp_posil.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_malrang",
+          "name": "말랑핑",
+          "outline": "outlines/tp_malrang.png",
+          "thumbnail": "thumbs/tp_malrang.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_shasha",
+          "name": "샤샤핑",
+          "outline": "outlines/tp_shasha.png",
+          "thumbnail": "thumbs/tp_shasha.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_saekom",
+          "name": "새콤핑",
+          "outline": "outlines/tp_saekom.png",
+          "thumbnail": "thumbs/tp_saekom.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_dalkom",
+          "name": "달콤핑",
+          "outline": "outlines/tp_dalkom.png",
+          "thumbnail": "thumbs/tp_dalkom.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_candy",
+          "name": "캔디핑",
+          "outline": "outlines/tp_candy.png",
+          "thumbnail": "thumbs/tp_candy.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_meraeng",
+          "name": "머랭핑",
+          "outline": "outlines/tp_meraeng.png",
+          "thumbnail": "thumbs/tp_meraeng.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_sand",
+          "name": "샌드핑",
+          "outline": "outlines/tp_sand.png",
+          "thumbnail": "thumbs/tp_sand.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_ddoner",
+          "name": "또너핑",
+          "outline": "outlines/tp_ddoner.png",
+          "thumbnail": "thumbs/tp_ddoner.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_waffle",
+          "name": "와플핑",
+          "outline": "outlines/tp_waffle.png",
+          "thumbnail": "thumbs/tp_waffle.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_lolly",
+          "name": "롤리핑",
+          "outline": "outlines/tp_lolly.png",
+          "thumbnail": "thumbs/tp_lolly.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_maca",
+          "name": "마카핑",
+          "outline": "outlines/tp_maca.png",
+          "thumbnail": "thumbs/tp_maca.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_hotcake",
+          "name": "핫케핑",
+          "outline": "outlines/tp_hotcake.png",
+          "thumbnail": "thumbs/tp_hotcake.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_cup_muffin",
+          "name": "커핑&머핑",
+          "outline": "outlines/tp_cup_muffin.png",
+          "thumbnail": "thumbs/tp_cup_muffin.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_yoger",
+          "name": "요거핑",
+          "outline": "outlines/tp_yoger.png",
+          "thumbnail": "thumbs/tp_yoger.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_nunkkot",
+          "name": "눈꽃핑",
+          "outline": "outlines/tp_nunkkot.png",
+          "thumbnail": "thumbs/tp_nunkkot.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_pudding",
+          "name": "푸딩핑",
+          "outline": "outlines/tp_pudding.png",
+          "thumbnail": "thumbs/tp_pudding.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_melo",
+          "name": "멜로핑",
+          "outline": "outlines/tp_melo.png",
+          "thumbnail": "thumbs/tp_melo.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_jjoko",
+          "name": "쪼꼬핑",
+          "outline": "outlines/tp_jjoko.png",
+          "thumbnail": "thumbs/tp_jjoko.png",
+          "addedAt": 1777473134591
+        },
+        {
+          "id": "tp_ppuppu",
+          "name": "뿌뿌핑",
+          "outline": "outlines/tp_ppuppu.png",
+          "thumbnail": "thumbs/tp_ppuppu.png",
+          "addedAt": 1777473134591
+        }
       ]
     },
     {
@@ -20,9 +163,27 @@
       "themeColor": "#A5D6A7",
       "thumbnail": "thumbs/animals.png",
       "targets": [
-        { "id": "an_bear",   "name": "곰돌이",  "outline": "outlines/an_bear.png",   "thumbnail": "thumbs/an_bear.png",   "addedAt": 0 },
-        { "id": "an_rabbit", "name": "토끼",    "outline": "outlines/an_rabbit.png", "thumbnail": "thumbs/an_rabbit.png", "addedAt": 0 },
-        { "id": "an_cat",    "name": "고양이",  "outline": "outlines/an_cat.png",    "thumbnail": "thumbs/an_cat.png",    "addedAt": 0 }
+        {
+          "id": "an_bear",
+          "name": "곰돌이",
+          "outline": "outlines/an_bear.png",
+          "thumbnail": "thumbs/an_bear.png",
+          "addedAt": 0
+        },
+        {
+          "id": "an_rabbit",
+          "name": "토끼",
+          "outline": "outlines/an_rabbit.png",
+          "thumbnail": "thumbs/an_rabbit.png",
+          "addedAt": 0
+        },
+        {
+          "id": "an_cat",
+          "name": "고양이",
+          "outline": "outlines/an_cat.png",
+          "thumbnail": "thumbs/an_cat.png",
+          "addedAt": 0
+        }
       ]
     }
   ]
