@@ -120,7 +120,7 @@ private fun ToolToggleIcon(
             )
 
             Tool.ERASER -> EraserIcon(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(width = 40.dp, height = 24.dp),
             )
         }
     }
