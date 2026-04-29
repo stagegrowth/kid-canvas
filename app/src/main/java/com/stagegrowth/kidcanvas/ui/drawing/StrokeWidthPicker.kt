@@ -22,13 +22,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 
-/** M3 명세대로 작은·중간·큰 세 단계 굵기. */
+/**
+ * 굵기 단계와 도구 매핑:
+ *   - 8dp  → 볼펜 (얇음)
+ *   - 16dp → 연필 (중간)
+ *   - 28dp → 붓   (굵음)
+ *
+ * 도구를 그림(아이콘)으로 보여 5살이 한글 못 읽어도 인식 가능.
+ */
 private val WidthOptions: List<Float> = listOf(8f, 16f, 28f)
 
-/**
- * 굵기 선택. 미리보기로 실제 굵기의 가로 선을 그어 보여 5살이
- * "이만큼 두꺼운 선이 그려진다" 를 직관적으로 인식.
- */
 @Composable
 fun StrokeWidthPicker(
     currentWidthDp: Float,
@@ -72,21 +75,81 @@ private fun RowScope.WidthOption(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        // 실제 굵기로 가로 선 한 줄 — 5살이 직관적으로 인식
-        Canvas(
+        ToolGlyph(
+            widthDp = widthDp,
+            tint = Color(0xFF333333),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp)
-                .padding(horizontal = 12.dp),
-        ) {
-            val y = size.height / 2f
-            drawLine(
-                color = Color.Black,
-                start = Offset(0f, y),
-                end = Offset(size.width, y),
-                strokeWidth = widthDp.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
-        }
+                .height(36.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
+/** 굵기 값에 대응하는 도구 그림. */
+@Composable
+private fun ToolGlyph(widthDp: Float, tint: Color, modifier: Modifier) {
+    when (widthDp) {
+        8f -> BallpointGlyph(tint, modifier)
+        16f -> PencilGlyph(tint, modifier)
+        else -> BrushGlyph(tint, modifier)
+    }
+}
+
+/** 볼펜: 가는 사선 + 끝에 작은 진한 점(촉). */
+@Composable
+private fun BallpointGlyph(tint: Color, modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokeW = h * 0.16f
+        val tipPoint = Offset(w * 0.20f, h * 0.78f)
+        drawLine(
+            color = tint,
+            start = tipPoint,
+            end = Offset(w * 0.80f, h * 0.22f),
+            strokeWidth = strokeW,
+            cap = StrokeCap.Round,
+        )
+        // 펜 촉 표현용 진한 작은 원
+        drawCircle(
+            color = tint,
+            radius = strokeW * 0.7f,
+            center = tipPoint,
+        )
+    }
+}
+
+/** 연필: 중간 굵기 사선 + 사각 끝(연필 끝 모양). */
+@Composable
+private fun PencilGlyph(tint: Color, modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokeW = h * 0.30f
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.22f, h * 0.78f),
+            end = Offset(w * 0.78f, h * 0.22f),
+            strokeWidth = strokeW,
+            cap = StrokeCap.Square,
+        )
+    }
+}
+
+/** 붓: 굵은 사선 + 둥근 끝(붓털 모양). */
+@Composable
+private fun BrushGlyph(tint: Color, modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokeW = h * 0.50f
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.25f, h * 0.75f),
+            end = Offset(w * 0.75f, h * 0.25f),
+            strokeWidth = strokeW,
+            cap = StrokeCap.Round,
+        )
     }
 }
