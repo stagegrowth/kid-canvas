@@ -101,7 +101,7 @@ fun DrawingScreen(
             onToolSelected = viewModel::changeTool,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 2.dp),
         )
 
         StrokeWidthPicker(
@@ -109,7 +109,7 @@ fun DrawingScreen(
             onWidthSelected = viewModel::changeWidthDp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 2.dp),
         )
 
         ColorPalette(
@@ -117,7 +117,7 @@ fun DrawingScreen(
             onColorSelected = viewModel::changeColor,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 4.dp),
         )
     }
 

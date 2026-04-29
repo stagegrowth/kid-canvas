@@ -29,8 +29,8 @@ val PaletteColors: List<Long> = listOf(
 )
 
 /**
- * 5칼럼 × 4행 색상 그리드.
- * 선택된 색은 검정 3dp 테두리로 강조 (5살 UX: 시각적 피드백).
+ * 5칼럼 × 4행 색상 그리드. 칩 visual 40dp, 칸 간격 6dp 로 컴팩트하게.
+ * 선택된 색은 검정 3dp 테두리로 강조.
  */
 @Composable
 fun ColorPalette(
@@ -40,7 +40,7 @@ fun ColorPalette(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         PaletteColors.chunked(5).forEach { rowColors ->
             Row(
@@ -68,7 +68,7 @@ private fun ColorChip(
 ) {
     Box(
         modifier = Modifier
-            .size(56.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .background(Color(color))
             .border(
