@@ -1,5 +1,29 @@
 {
   "version": 1,
   "generatedAt": 0,
-  "categories": []
+  "categories": [
+    {
+      "id": "tinyping",
+      "name": "티니핑",
+      "themeColor": "#FFC0CB",
+      "thumbnail": "thumbs/tinyping.png",
+      "targets": [
+        { "id": "tp_hachu",  "name": "하츄핑",  "outline": "outlines/tp_hachu.png",  "thumbnail": "thumbs/tp_hachu.png",  "addedAt": 0 },
+        { "id": "tp_lakuna", "name": "라쿠핑",  "outline": "outlines/tp_lakuna.png", "thumbnail": "thumbs/tp_lakuna.png", "addedAt": 0 },
+        { "id": "tp_meri",   "name": "메리핑",  "outline": "outlines/tp_meri.png",   "thumbnail": "thumbs/tp_meri.png",   "addedAt": 0 },
+        { "id": "tp_jellie", "name": "젤리핑",  "outline": "outlines/tp_jellie.png", "thumbnail": "thumbs/tp_jellie.png", "addedAt": 0 }
+      ]
+    },
+    {
+      "id": "animals",
+      "name": "동물 친구들",
+      "themeColor": "#A5D6A7",
+      "thumbnail": "thumbs/animals.png",
+      "targets": [
+        { "id": "an_bear",   "name": "곰돌이",  "outline": "outlines/an_bear.png",   "thumbnail": "thumbs/an_bear.png",   "addedAt": 0 },
+        { "id": "an_rabbit", "name": "토끼",    "outline": "outlines/an_rabbit.png", "thumbnail": "thumbs/an_rabbit.png", "addedAt": 0 },
+        { "id": "an_cat",    "name": "고양이",  "outline": "outlines/an_cat.png",    "thumbnail": "thumbs/an_cat.png",    "addedAt": 0 }
+      ]
+    }
+  ]
 }

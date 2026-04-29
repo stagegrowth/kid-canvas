@@ -20,6 +20,31 @@ interface DrawingStateDao {
     @Query("SELECT EXISTS(SELECT 1 FROM drawing_states WHERE targetId = :targetId)")
     fun existsByTargetId(targetId: String): Flow<Boolean>
 
+    /**
+     * 주어진 targetIds 중 "획이 1개 이상 저장된" 행 수.
+     * strokesJson 이 빈 문자열이거나 '[]'(빈 배열) 인 경우는 시작 안 한 것으로 본다.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM drawing_states
+        WHERE targetId IN (:targetIds)
+          AND strokesJson != ''
+          AND strokesJson != '[]'
+        """
+    )
+    fun countStartedTargets(targetIds: List<String>): Flow<Int>
+
+    /** 주어진 targetIds 중 시작된 것들의 id 목록. PickerScreen 에서 배지 표시용. */
+    @Query(
+        """
+        SELECT targetId FROM drawing_states
+        WHERE targetId IN (:targetIds)
+          AND strokesJson != ''
+          AND strokesJson != '[]'
+        """
+    )
+    fun startedTargetIds(targetIds: List<String>): Flow<List<String>>
+
     @Upsert
     suspend fun upsert(entity: DrawingStateEntity)
 

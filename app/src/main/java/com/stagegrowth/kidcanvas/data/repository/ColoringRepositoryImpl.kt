@@ -4,10 +4,13 @@ import com.stagegrowth.kidcanvas.data.asset.AssetContentLoader
 import com.stagegrowth.kidcanvas.data.local.DrawingStateDao
 import com.stagegrowth.kidcanvas.data.local.DrawingStateEntity
 import com.stagegrowth.kidcanvas.domain.model.Category
+import com.stagegrowth.kidcanvas.domain.model.CategoryProgress
 import com.stagegrowth.kidcanvas.domain.model.DrawingState
 import com.stagegrowth.kidcanvas.domain.model.Stroke
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
@@ -48,6 +51,30 @@ class ColoringRepositoryImpl @Inject constructor(
 
     override fun hasDrawing(targetId: String): Flow<Boolean> =
         dao.existsByTargetId(targetId)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override fun getCategoryProgress(categoryId: String): Flow<CategoryProgress> =
+        getCategory(categoryId).flatMapLatest { category ->
+            if (category == null || category.targets.isEmpty()) {
+                flowOf(CategoryProgress.Empty.copy(total = category?.targets?.size ?: 0))
+            } else {
+                val ids = category.targets.map { it.id }
+                dao.countStartedTargets(ids).map { started ->
+                    CategoryProgress(total = category.targets.size, started = started)
+                }
+            }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    override fun startedTargetIds(categoryId: String): Flow<Set<String>> =
+        getCategory(categoryId).flatMapLatest { category ->
+            val ids = category?.targets?.map { it.id } ?: emptyList()
+            if (ids.isEmpty()) {
+                flowOf(emptySet())
+            } else {
+                dao.startedTargetIds(ids).map { it.toSet() }
+            }
+        }
 
     private fun DrawingStateEntity.toDomain(): DrawingState = DrawingState(
         targetId = targetId,

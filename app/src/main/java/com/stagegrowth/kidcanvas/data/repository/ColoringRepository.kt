@@ -1,6 +1,7 @@
 package com.stagegrowth.kidcanvas.data.repository
 
 import com.stagegrowth.kidcanvas.domain.model.Category
+import com.stagegrowth.kidcanvas.domain.model.CategoryProgress
 import com.stagegrowth.kidcanvas.domain.model.DrawingState
 import kotlinx.coroutines.flow.Flow
 
@@ -16,4 +17,10 @@ interface ColoringRepository {
     suspend fun saveDrawingState(state: DrawingState)
     suspend fun resetDrawing(targetId: String)
     fun hasDrawing(targetId: String): Flow<Boolean>
+
+    /** 카테고리 진행 상황(total / started). 메타데이터(content.json) + Room 결합. */
+    fun getCategoryProgress(categoryId: String): Flow<CategoryProgress>
+
+    /** 카테고리 내 "시작된 targetId" 집합. PickerScreen 의 배지용. */
+    fun startedTargetIds(categoryId: String): Flow<Set<String>>
 }

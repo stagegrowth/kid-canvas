@@ -2,7 +2,6 @@ package com.stagegrowth.kidcanvas.ui.drawing
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.stagegrowth.kidcanvas.data.repository.ColoringRepository
@@ -25,28 +24,51 @@ import javax.inject.Inject
  * Spring 비유:
  *   - @Service. StateFlow 가 응답 모델, on*() 가 핸들러.
  *   - viewModelScope.launch 는 ViewModel 라이프사이클에 묶인 @Async 컨텍스트 (화면 종료 시 자동 취소).
- *   - SavedStateHandle 은 @PathVariable + 액티비티 재생성 시까지 살아남는 좁은 컨텍스트.
  *
- * M5: stroke 변경(획 추가, undo) 마다 Room 에 저장. init 에서 한 번 복원. reset 은 DB 도 비움.
+ * targetId 는 setTargetId() 로 화면 진입 시 한 번 주입.
+ * (M7 NavGraph 도입 시 SavedStateHandle 로 자동 주입되도록 교체 예정.)
  */
 @HiltViewModel
 class DrawingViewModel @Inject constructor(
     private val repository: ColoringRepository,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val targetId: String =
-        savedStateHandle.get<String>(KEY_TARGET_ID) ?: DEFAULT_TARGET_ID
-
-    private val _uiState = MutableStateFlow(DrawingUiState(targetId = targetId))
+    private val _uiState = MutableStateFlow(DrawingUiState())
     val uiState: StateFlow<DrawingUiState> = _uiState.asStateFlow()
 
-    init {
-        // 한 번만 읽어 초기 strokes 복원. Flow 를 계속 구독하지 않는 이유:
-        // 본 ViewModel 자신이 저장의 출처라 재구독 시 자기가 쓴 값으로 덮어쓰는 루프 발생.
+    private var initialized: Boolean = false
+
+    /**
+     * 화면이 알려준 targetId 로 ViewModel 을 활성화.
+     * idempotent 하게 — 같은 id 로 재호출되면 무시 (LaunchedEffect 가 재구성될 때 안전).
+     */
+    fun setTargetId(targetId: String) {
+        if (initialized && _uiState.value.targetId == targetId) return
+        initialized = true
+        _uiState.update {
+            it.copy(
+                targetId = targetId,
+                targetName = "",
+                outlinePath = null,
+                strokes = emptyList(),
+                currentStroke = null,
+            )
+        }
         viewModelScope.launch {
+            // 1) 메타데이터(이름, 외곽선) 해석
+            val target = repository.getCategories().first()
+                .flatMap { it.targets }
+                .firstOrNull { it.id == targetId }
+            if (target != null && _uiState.value.targetId == targetId) {
+                _uiState.update {
+                    it.copy(targetName = target.name, outlinePath = target.outline)
+                }
+            }
+            // 2) 저장된 strokes 복원
             val saved = repository.getDrawingState(targetId).first()
-            if (saved != null && saved.strokes.isNotEmpty()) {
+            if (saved != null && saved.strokes.isNotEmpty()
+                && _uiState.value.targetId == targetId
+            ) {
                 _uiState.update { it.copy(strokes = saved.strokes) }
             }
         }
@@ -101,6 +123,7 @@ class DrawingViewModel @Inject constructor(
 
     /** 전체 초기화. 다이얼로그 확인 후에만 호출되어야 함. DB 의 저장 행도 제거. */
     fun reset() {
+        val targetId = _uiState.value.targetId
         _uiState.update { it.copy(strokes = emptyList(), currentStroke = null) }
         viewModelScope.launch {
             repository.resetDrawing(targetId)
@@ -131,12 +154,6 @@ class DrawingViewModel @Inject constructor(
                 )
             )
         }
-    }
-
-    companion object {
-        const val KEY_TARGET_ID = "targetId"
-        // M7 NavGraph 도입 전까지의 단일 테스트용 id. M7 에서 실제 캐릭터 id 가 주입됨.
-        const val DEFAULT_TARGET_ID = "test_target"
     }
 }
 
