@@ -18,6 +18,11 @@
 
 ## Development Environment
 - 호스트: Windows + WSL2 Ubuntu
+- **프로젝트 위치 (Windows 디스크에 위치, WSL과 Windows가 같은 폴더 공유)**:
+  - WSL 시점: `/mnt/c/Users/sgkim/workspace/kid-canvas`
+  - Windows 시점: `C:\Users\sgkim\workspace\kid-canvas`
+  - 이전 위치(`/home/segon/workspace/kid-canvas`)는 백업으로 `.OLD` 접미사를 붙여 보존됨 (며칠 후 안정 확인 시 삭제 결정)
+  - WSL ext4 경로에 두면 9P 프로토콜의 파일 락 미지원 때문에 Gradle Sync가 IOException으로 실패하여 Windows 디스크로 옮김
 - **WSL의 Claude Code에서 진행**: 코드 편집, `git`, 콘텐츠 빌드 스크립트(Python), 간단한 `./gradlew` 검증(`--version`, `tasks`, `compileDebugKotlin`)
 - **Windows의 Android Studio에서 진행**: 실제 빌드, 기기 설치, 에뮬레이터 실행, SDK 매니저, 라이선스 동의
 - Android SDK는 Windows에만 설치. WSL에는 별도 SDK 두지 않음
@@ -47,7 +52,7 @@
 ## Folder Structure
 
 ```
-kid-canvas/   (= /home/segon/workspace/kid-canvas, 문서상의 coloring-project에 해당)
+kid-canvas/   (= /mnt/c/Users/sgkim/workspace/kid-canvas, 문서상의 coloring-project에 해당)
 ├─ app/                              안드로이드 앱
 │  └─ src/main/
 │     ├─ java/com/stagegrowth/kidcanvas/
@@ -109,6 +114,39 @@ kid-canvas/   (= /home/segon/workspace/kid-canvas, 문서상의 coloring-project
 - 각 마일스톤의 상세 요구사항은 `docs/claude_prompt_v3.md`에 정의됨
 - 마일스톤 시작 시: 짧은 계획 보여주고 시작
 - 마일스톤 완료 시: 실행/검증 방법 1~3줄 가이드 + git commit + push
+
+## WSL + Android 운영 가이드
+
+### ⚠️ 절대 하지 말 것
+- `chmod -R 777` (NTFS ACL 영구 손상, Android Studio Open 차단)
+- `.idea/` 폴더 삭제 (IDE Trust 정보 손실)
+
+### ✅ 권한 변경 시 표준 권한
+- 파일: `chmod 644`
+- 디렉토리: `chmod 755`
+- 실행 스크립트(`gradlew` 등): `chmod 755`
+
+### 🔧 알려진 한계 및 우회
+1. WSL ext4(`/home/...`) 경로의 Android 프로젝트:
+   - Android Studio Open 시 NTFS ACL 권한 매핑 이슈 발생 가능
+   - Gradle Sync 시 9P 프로토콜이 파일 락 미지원 → `IOException`
+2. **우회**: 안드로이드 프로젝트는 Windows 디스크(`/mnt/c/Users/<id>/...`)에 두는 것이 표준
+3. 다른 종류 프로젝트(Spring, Python, 일반 Linux 도구)는 WSL ext4에 두어도 OK
+
+### 📋 Claude Code 워크플로우 (변화 없음)
+- `cd /mnt/c/Users/sgkim/workspace/kid-canvas`
+- `claude`
+- 모든 명령(`git`, `gradle`, 파일 편집)은 그대로
+- 단지 진입 경로만 다름
+
+### 🔍 트러블슈팅
+- **폴더 Open 권한 에러**:
+  1. 빈 폴더로 격리 테스트 (시스템 vs 폴더 문제 분리)
+  2. 폴더 문제면 새 폴더에 fresh 복사 + `.git`만 `git clone`
+- **Gradle Sync `IOException`**:
+  - 9P 한계, Windows 디스크 이동 필수
+- **`git status`에 가짜 변경분 (mode `100644 → 100755` 등)**:
+  - `git config core.fileMode false` 적용
 
 ## Build Verification (WSL)
 WSL에서는 Gradle 래퍼 동작과 Kotlin 컴파일 정도만 검증:
