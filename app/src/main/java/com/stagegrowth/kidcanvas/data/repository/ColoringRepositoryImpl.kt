@@ -5,15 +5,21 @@ import com.stagegrowth.kidcanvas.data.local.DrawingStateDao
 import com.stagegrowth.kidcanvas.data.local.DrawingStateEntity
 import com.stagegrowth.kidcanvas.domain.model.Category
 import com.stagegrowth.kidcanvas.domain.model.DrawingState
+import com.stagegrowth.kidcanvas.domain.model.Stroke
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * 카테고리/캐릭터 메타는 assets/content.json (읽기 전용)에서,
  * 사용자 그림 상태는 Room (쓰기 가능)에서 가져온다.
+ *
+ * List(Stroke) 와 Room 의 String 컬럼 사이의 변환은 여기서 담당.
+ * (Room TypeConverter 로 generic List 를 다루면 KSP 분석이 까다로워 Repository 에서 처리.)
  */
 @Singleton
 class ColoringRepositoryImpl @Inject constructor(
@@ -22,7 +28,6 @@ class ColoringRepositoryImpl @Inject constructor(
 ) : ColoringRepository {
 
     // 메타데이터는 앱 실행 중 변하지 않으므로 한 번만 읽어 흘려보냄.
-    // (콘텐츠 갱신은 빌드 도구가 APK 새로 만들어야 반영됨 — 앱 재시작 필요)
     override fun getCategories(): Flow<List<Category>> = flow {
         emit(loader.loadCategories())
     }
@@ -43,16 +48,31 @@ class ColoringRepositoryImpl @Inject constructor(
 
     override fun hasDrawing(targetId: String): Flow<Boolean> =
         dao.existsByTargetId(targetId)
+
+    private fun DrawingStateEntity.toDomain(): DrawingState = DrawingState(
+        targetId = targetId,
+        strokes = decodeStrokes(strokesJson),
+        updatedAt = updatedAt,
+    )
+
+    private fun DrawingState.toEntity(): DrawingStateEntity = DrawingStateEntity(
+        targetId = targetId,
+        strokesJson = encodeStrokes(strokes),
+        updatedAt = updatedAt,
+    )
+
+    private fun encodeStrokes(strokes: List<Stroke>): String =
+        json.encodeToString(strokeListSerializer, strokes)
+
+    private fun decodeStrokes(value: String): List<Stroke> =
+        if (value.isBlank()) emptyList()
+        else json.decodeFromString(strokeListSerializer, value)
+
+    companion object {
+        private val json = Json {
+            ignoreUnknownKeys = true
+            coerceInputValues = true
+        }
+        private val strokeListSerializer = ListSerializer(Stroke.serializer())
+    }
 }
-
-private fun DrawingStateEntity.toDomain(): DrawingState = DrawingState(
-    targetId = targetId,
-    strokes = strokes,
-    updatedAt = updatedAt,
-)
-
-private fun DrawingState.toEntity(): DrawingStateEntity = DrawingStateEntity(
-    targetId = targetId,
-    strokes = strokes,
-    updatedAt = updatedAt,
-)

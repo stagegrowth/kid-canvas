@@ -2,16 +2,18 @@ package com.stagegrowth.kidcanvas.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.stagegrowth.kidcanvas.domain.model.Stroke
 
 /**
- * 한 캐릭터(target)당 한 행. 자동 저장으로 재진입 시 그림을 복원할 때 사용.
+ * 한 캐릭터(target) 당 한 행. 자동 저장으로 재진입 시 그림을 복원할 때 사용.
  *
- * Spring 비유: JPA @Entity + @Id, strokes 는 List<Stroke> 를 JSON 으로 직렬화해 TEXT 컬럼 저장.
+ * strokesJson: List(Stroke) 를 kotlinx.serialization 으로 JSON 직렬화한 문자열.
+ * Repository 에서 도메인 모델 DrawingState 와 양방향 변환한다.
+ *
+ * Spring 비유: JPA Entity. List 컬럼을 직접 쓰지 않고 직렬화된 TEXT 컬럼으로 저장.
  */
 @Entity(tableName = "drawing_states")
 data class DrawingStateEntity(
     @PrimaryKey val targetId: String,
-    val strokes: List<Stroke>,
+    val strokesJson: String,
     val updatedAt: Long,
 )
