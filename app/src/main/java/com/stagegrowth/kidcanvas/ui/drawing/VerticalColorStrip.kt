@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
@@ -29,7 +28,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 
 /**
- * 색칠 화면 우측 세로 색상 띠 + 옆 ▶ 인디케이터의 기본 색상 13개.
+ * 색칠 화면 우측 세로 색상 띠의 기본 색상 13개.
  * 위→아래 순서로 화이트→난색→한색→검정 흐름.
  */
 val DefaultStripColors: List<Long> = listOf(
@@ -50,7 +49,7 @@ val DefaultStripColors: List<Long> = listOf(
 
 /**
  * 캔버스 우측에 위치하는 색상 선택 영역.
- * 좌측 띠(드래그/탭으로 색 선택) + 우측 ▶ 인디케이터로 분리.
+ * 좌측에 ▶ 인디케이터, 우측에 색상 띠. ▶ 가 색상 띠를 가리키는 자연스러운 배치.
  *
  * Spring 비유: pointerInput { awaitEachGesture { ... } } 는 down→drag→up 한 사이클의
  * 터치 이벤트만 받아 처리하는 핸들러 코루틴. Servlet Filter 안에서 InputStream 을
@@ -63,21 +62,21 @@ fun VerticalColorPickerArea(
     onColorSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 정확히 일치하는 색이 없으면 첫 번째 인덱스로
     val selectedIndex = colors.indexOf(selectedColor).let { if (it < 0) 0 else it }
     Row(modifier = modifier) {
-        VerticalColorStrip(
-            colors = colors,
-            onColorSelected = onColorSelected,
-            modifier = Modifier
-                .weight(10f) // 색상 띠 ~10% (사용자 명세)
-                .fillMaxHeight(),
-        )
+        // 인디케이터 ~3% (왼쪽), 색상 띠 ~10% (오른쪽). ▶ 가 우측의 색을 가리킴.
         ColorIndicator(
             selectedIndex = selectedIndex,
             totalCount = colors.size,
             modifier = Modifier
-                .weight(3f) // 인디케이터 ~3%
+                .weight(3f)
+                .fillMaxHeight(),
+        )
+        VerticalColorStrip(
+            colors = colors,
+            onColorSelected = onColorSelected,
+            modifier = Modifier
+                .weight(10f)
                 .fillMaxHeight(),
         )
     }
@@ -89,7 +88,6 @@ private fun VerticalColorStrip(
     onColorSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 측정한 띠의 픽셀 높이를 기억 — y 좌표 → 색상 인덱스 매핑에 필요
     var stripHeightPx by remember { mutableFloatStateOf(0f) }
 
     Column(
@@ -113,7 +111,6 @@ private fun VerticalColorStrip(
             },
     ) {
         colors.forEach { c ->
-            // 칩 사이 구분선 없이 같은 높이로 빽빽하게 쌓임
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,8 +135,8 @@ private fun selectByY(
 }
 
 /**
- * 선택된 색 옆에 ▶ 모양 표시.
- * animateDpAsState 로 색이 바뀔 때 부드럽게 위아래 이동.
+ * 색상 띠 왼쪽에 위치한 ▶. animateDpAsState 로 색이 바뀔 때 부드럽게 위아래 이동.
+ * 우측 정렬해서 색상 띠 바로 옆에 붙어 보이게.
  */
 @Composable
 private fun ColorIndicator(
@@ -151,7 +148,6 @@ private fun ColorIndicator(
         val totalH = maxHeight
         val cellH = if (totalCount > 0) totalH / totalCount else totalH
         val triangleSize = 18.dp
-        // 선택된 셀의 중심 = cellH * index + cellH/2. 거기서 삼각형 높이의 절반만큼 위로.
         val target = cellH * selectedIndex + cellH / 2 - triangleSize / 2
         val animY by animateDpAsState(targetValue = target, label = "colorIndicator")
 
@@ -160,7 +156,8 @@ private fun ColorIndicator(
                 .offset(y = animY)
                 .fillMaxWidth()
                 .height(triangleSize),
-            contentAlignment = Alignment.Center,
+            // 우측 정렬 → ▶ 가 색상 띠 바로 옆에 붙음
+            contentAlignment = Alignment.CenterEnd,
         ) {
             TriangleRight(
                 color = Color(0xFF333333),

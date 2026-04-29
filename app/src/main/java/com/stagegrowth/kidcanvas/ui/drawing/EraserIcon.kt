@@ -8,42 +8,64 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 
 /**
- * 직접 그린 지우개 모양 (Material Icons 에 적당한 게 없어 자체 그래픽).
- * monochrome — tint 색 하나로 외곽선 + 중앙 띠.
+ * 컬러풀 지우개 아이콘 — 5살이 즉시 "지우개" 로 인식.
+ * 분홍 본체(아래) + 푸른 보라 띠(위) + 진한 분홍 외곽선.
  *
- * TopActionBar 의 도구 토글, 향후 다른 도구 UI 등에서 재사용.
+ * 흔한 학용품 지우개의 두 톤(고무 + 캡) 패턴을 단순화. tint 파라미터 없음 —
+ * 선택/비선택 차이는 호출처(TopActionBar)에서 배경 원으로 표현.
  */
 @Composable
-fun EraserIcon(
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
+fun EraserIcon(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
-        val padX = w * 0.12f
-        val top = h * 0.30f
-        val bottom = h * 0.70f
-        val midY = (top + bottom) / 2f
-        val strokeW = size.minDimension * 0.08f
-        val corner = CornerRadius(size.minDimension * 0.12f)
+        val padX = w * 0.08f
+        val top = h * 0.22f
+        val bottom = h * 0.78f
+        val bodyW = w - padX * 2f
+        val bodyH = bottom - top
+        val stripeBottom = top + bodyH * 0.40f // 위쪽 40% 가 푸른 띠
+        val corner = CornerRadius(w * 0.12f)
+        val outlineW = w * 0.04f
 
-        // 본체 둥근 사각형 (외곽선만)
+        // 1) 본체 분홍
         drawRoundRect(
-            color = tint,
+            color = Color(0xFFFFB6C1),
             topLeft = Offset(padX, top),
-            size = Size(w - padX * 2, bottom - top),
+            size = Size(bodyW, bodyH),
             cornerRadius = corner,
-            style = Stroke(width = strokeW),
         )
-        // 중앙 가로 띠 — 지우개의 분리 표시
+        // 2) 위쪽 푸른 띠 — 본체 둥근 모서리를 따라가도록 clipRect 안에서 같은 둥근 사각 다시 그림
+        clipRect(
+            left = padX,
+            top = top,
+            right = padX + bodyW,
+            bottom = stripeBottom,
+        ) {
+            drawRoundRect(
+                color = Color(0xFF7986CB),
+                topLeft = Offset(padX, top),
+                size = Size(bodyW, bodyH),
+                cornerRadius = corner,
+            )
+        }
+        // 3) 분리선 (띠와 본체 경계)
         drawLine(
-            color = tint,
-            start = Offset(padX + strokeW, midY),
-            end = Offset(w - padX - strokeW, midY),
-            strokeWidth = strokeW,
+            color = Color(0xFF333333),
+            start = Offset(padX, stripeBottom),
+            end = Offset(padX + bodyW, stripeBottom),
+            strokeWidth = outlineW * 0.5f,
+        )
+        // 4) 본체 외곽선 (진한 분홍)
+        drawRoundRect(
+            color = Color(0xFFD81B60),
+            topLeft = Offset(padX, top),
+            size = Size(bodyW, bodyH),
+            cornerRadius = corner,
+            style = Stroke(width = outlineW),
         )
     }
 }
