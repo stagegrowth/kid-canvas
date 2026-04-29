@@ -13,7 +13,7 @@ import com.stagegrowth.kidcanvas.domain.model.Tool
  * 그래야 처음 진입 시 인디케이터(▶) 가 빨강 위치에 정렬.
  */
 data class DrawingUiState(
-    val targetId: String = "preview",
+    val targetId: String = "test_target",
     val targetName: String = "테스트",
     val outlinePath: String? = null,
     val strokes: List<Stroke> = emptyList(),
