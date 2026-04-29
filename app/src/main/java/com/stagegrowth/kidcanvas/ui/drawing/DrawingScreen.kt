@@ -1,35 +1,40 @@
 package com.stagegrowth.kidcanvas.ui.drawing
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
 /**
- * M3 PoC 드로잉 화면.
- * 레이아웃:
- *   [상단] 캐릭터 이름
- *   [중앙] 정사각 캔버스 (z=0 흰 배경 / z=1 사용자 그림 / z=2 외곽선)
- *   [하단] 지우기 버튼
+ * M4 드로잉 화면.
+ * 레이아웃 (위에서 아래로):
+ *   TopActionBar (뒤로/이름/되돌리기/처음부터)
+ *   정사각 캔버스 (z=0 흰 배경 / z=1 사용자 그림 / z=2 외곽선)
+ *   ToolBar (붓 / 지우개)
+ *   StrokeWidthPicker (8 / 16 / 28dp)
+ *   ColorPalette (5칼럼 × 4행, 총 20색)
  */
 @Composable
 fun DrawingScreen(
@@ -37,21 +42,19 @@ fun DrawingScreen(
     viewModel: DrawingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showResetDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBE6)), // 따뜻한 크림색 배경
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .background(Color(0xFFFFFBE6)),
     ) {
-        Text(
-            text = uiState.targetName,
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+        TopActionBar(
+            title = uiState.targetName,
+            onBack = { /* M7 NavGraph 도입 시 */ },
+            onUndo = viewModel::undo,
+            onResetRequest = { showResetDialog = true },
+            canUndo = uiState.strokes.isNotEmpty(),
         )
 
         BoxWithConstraints(
@@ -67,9 +70,9 @@ fun DrawingScreen(
             Box(
                 modifier = Modifier
                     .size(side)
-                    .background(Color.White), // z=0 흰 배경
+                    .background(Color.White), // z=0 흰 배경 (graphicsLayer 외부)
             ) {
-                // z=1 사용자 드로잉
+                // z=1 사용자 드로잉 (graphicsLayer Offscreen 안에서 BlendMode 처리)
                 DrawingCanvas(
                     strokes = uiState.strokes,
                     currentStroke = uiState.currentStroke,
@@ -79,7 +82,7 @@ fun DrawingScreen(
                     modifier = Modifier.fillMaxSize(),
                 )
 
-                // z=2 외곽선 (asset 이 있으면 PNG, 없으면 placeholder)
+                // z=2 외곽선
                 val outlinePath = uiState.outlinePath
                 if (outlinePath != null) {
                     AsyncImage(
@@ -93,17 +96,76 @@ fun DrawingScreen(
             }
         }
 
-        Button(
-            onClick = viewModel::clearAll,
+        ToolBar(
+            currentTool = uiState.currentTool,
+            onToolSelected = viewModel::changeTool,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                .height(64.dp), // 5살 UX: 터치 타깃 ≥ 56dp
-        ) {
-            Text(
-                text = "지우기",
-                style = MaterialTheme.typography.titleLarge,
-            )
-        }
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+
+        StrokeWidthPicker(
+            currentWidthDp = uiState.currentWidthDp,
+            onWidthSelected = viewModel::changeWidthDp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+
+        ColorPalette(
+            selectedColor = uiState.currentColor,
+            onColorSelected = viewModel::changeColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
     }
+
+    if (showResetDialog) {
+        ResetConfirmDialog(
+            onConfirm = {
+                viewModel.reset()
+                showResetDialog = false
+            },
+            onDismiss = { showResetDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun ResetConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "정말 다 지울까요?",
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
+        text = {
+            Text(
+                text = "모든 그림이 사라져요.",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.heightIn(min = 56.dp),
+            ) {
+                Text("응, 지울래", style = MaterialTheme.typography.titleLarge)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                modifier = Modifier.heightIn(min = 56.dp),
+            ) {
+                Text("아니", style = MaterialTheme.typography.titleLarge)
+            }
+        },
+    )
 }

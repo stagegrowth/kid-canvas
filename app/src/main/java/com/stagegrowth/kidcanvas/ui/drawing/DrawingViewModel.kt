@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.ViewModel
 import com.stagegrowth.kidcanvas.domain.model.NormalizedPoint
 import com.stagegrowth.kidcanvas.domain.model.Stroke
+import com.stagegrowth.kidcanvas.domain.model.Tool
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,7 @@ import javax.inject.Inject
  * 드로잉 화면 상태 보유 + 사용자 입력 처리.
  * Spring 비유: @Controller 또는 @Service. StateFlow 가 응답 모델, on*() 가 핸들러.
  *
- * M3 PoC: Repository 주입 없음 (자동 저장은 M5).
+ * M4: 색·굵기·도구 선택 + Undo/Reset 추가. (자동 저장은 M5)
  */
 @HiltViewModel
 class DrawingViewModel @Inject constructor() : ViewModel() {
@@ -49,7 +50,6 @@ class DrawingViewModel @Inject constructor() : ViewModel() {
     fun onDragEnd() {
         _uiState.update { state ->
             val cur = state.currentStroke ?: return@update state
-            // 점 1개짜리 의미없는 stroke 도 점 한 개로 동그라미 찍히게 보존
             state.copy(
                 strokes = state.strokes + cur,
                 currentStroke = null,
@@ -57,8 +57,29 @@ class DrawingViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun clearAll() {
+    /** 마지막 stroke 한 개 제거. 비어 있으면 무시. */
+    fun undo() {
+        _uiState.update { state ->
+            if (state.strokes.isEmpty()) state
+            else state.copy(strokes = state.strokes.dropLast(1))
+        }
+    }
+
+    /** 전체 초기화. 다이얼로그 확인 후에만 호출되어야 함. */
+    fun reset() {
         _uiState.update { it.copy(strokes = emptyList(), currentStroke = null) }
+    }
+
+    fun changeColor(color: Long) {
+        _uiState.update { it.copy(currentColor = color) }
+    }
+
+    fun changeWidthDp(dp: Float) {
+        _uiState.update { it.copy(currentWidthDp = dp) }
+    }
+
+    fun changeTool(tool: Tool) {
+        _uiState.update { it.copy(currentTool = tool) }
     }
 }
 
