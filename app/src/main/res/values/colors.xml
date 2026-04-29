@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FF5A8C</color>
+    <!-- 아이콘 배경 — 강한 핑크는 너무 자극적이라 부드러운 살구 분홍으로 -->
+    <color name="ic_launcher_background">#FFC1CC</color>
 </resources>

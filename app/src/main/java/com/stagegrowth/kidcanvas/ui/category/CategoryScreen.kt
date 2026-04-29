@@ -1,5 +1,6 @@
 package com.stagegrowth.kidcanvas.ui.category
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,19 +27,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.stagegrowth.kidcanvas.domain.model.Category
 import com.stagegrowth.kidcanvas.domain.model.CategoryProgress
 import com.stagegrowth.kidcanvas.domain.model.ColoringTarget
 
 /**
  * 카테고리 선택 화면. 5살 기준:
- *   - 큰 컬러 카드, 한 줄 큰 글씨 카테고리 이름
- *   - 진행 표시는 작은 글씨로 부담 없이
+ *   - 큰 컬러 카드, 안에는 카테고리 캐릭터 4 개 미리보기 콜라주
+ *     (글을 못 읽어도 "여기에 어떤 친구들이 있는지" 그림으로 인식)
+ *   - 카드 위쪽에 카테고리 이름, 아래쪽에 진행 표시
  *   - 비어 있을 때는 큰 글씨 안내 + 어른용 작은 안내 (콘텐츠 추가 방법)
  */
 @Composable
@@ -125,26 +131,124 @@ private fun CategoryCard(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(themeBg)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(12.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Text(
                 text = category.name,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = onTheme,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            CategoryThumbCollage(
+                category = category,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = formatProgress(progress),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = onTheme.copy(alpha = 0.85f),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+/**
+ * 카테고리 안의 캐릭터 썸네일을 콜라주로 표시.
+ *   - 0 개 : 빈 영역
+ *   - 1 개 : 한 칸 가득
+ *   - 2 개 : 좌우 분할
+ *   - 3 개 : 왼쪽 큰 칸 + 오른쪽 위·아래 두 칸
+ *   - 4 개 이상 : 2 × 2 그리드 (앞 4 개)
+ */
+@Composable
+private fun CategoryThumbCollage(category: Category, modifier: Modifier = Modifier) {
+    val sample = category.targets.take(4)
+    val context = LocalContext.current
+
+    if (sample.isEmpty()) {
+        Spacer(modifier = modifier)
+        return
+    }
+
+    when (sample.size) {
+        1 -> ThumbTile(sample[0], context, modifier)
+
+        2 -> Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ThumbTile(sample[0], context, Modifier.weight(1f).fillMaxHeight())
+            ThumbTile(sample[1], context, Modifier.weight(1f).fillMaxHeight())
+        }
+
+        3 -> Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            ThumbTile(sample[0], context, Modifier.weight(1f).fillMaxHeight())
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ThumbTile(sample[1], context, Modifier.weight(1f).fillMaxWidth())
+                ThumbTile(sample[2], context, Modifier.weight(1f).fillMaxWidth())
+            }
+        }
+
+        else -> Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ThumbTile(sample[0], context, Modifier.weight(1f).fillMaxHeight())
+                ThumbTile(sample[1], context, Modifier.weight(1f).fillMaxHeight())
+            }
+            Row(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ThumbTile(sample[2], context, Modifier.weight(1f).fillMaxHeight())
+                ThumbTile(sample[3], context, Modifier.weight(1f).fillMaxHeight())
+            }
+        }
+    }
+}
+
+/**
+ * 단일 썸네일 칸. 외곽선 PNG 는 알파 배경이라 흰 배경 박스 안에 띄워야 카드의 컬러 위에서 보임.
+ */
+@Composable
+private fun ThumbTile(target: ColoringTarget, context: Context, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White),
+        contentAlignment = Alignment.Center,
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data("file:///android_asset/${target.thumbnail}")
+                .build(),
+            contentDescription = target.name,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(2.dp),
+        )
     }
 }
 
@@ -214,10 +318,10 @@ private fun CategoryScreenPreview() {
                 CategoryListItem(
                     category = Category(
                         id = "tinyping",
-                        name = "티니핑",
-                        themeColor = "#FFC0CB",
+                        name = "캐치 티니핑",
+                        themeColor = "#FF5A8C",
                         thumbnail = "thumbs/tinyping.png",
-                        targets = (1..8).map {
+                        targets = (1..21).map {
                             ColoringTarget(
                                 id = "tp_$it",
                                 name = "핑이$it",
@@ -227,7 +331,7 @@ private fun CategoryScreenPreview() {
                             )
                         },
                     ),
-                    progress = CategoryProgress(total = 8, started = 3),
+                    progress = CategoryProgress(total = 21, started = 3),
                 ),
                 CategoryListItem(
                     category = Category(
@@ -235,7 +339,7 @@ private fun CategoryScreenPreview() {
                         name = "동물 친구들",
                         themeColor = "#A5D6A7",
                         thumbnail = "thumbs/animals.png",
-                        targets = (1..5).map {
+                        targets = (1..3).map {
                             ColoringTarget(
                                 id = "an_$it",
                                 name = "동물$it",
@@ -245,7 +349,7 @@ private fun CategoryScreenPreview() {
                             )
                         },
                     ),
-                    progress = CategoryProgress(total = 5, started = 0),
+                    progress = CategoryProgress(total = 3, started = 0),
                 ),
             ),
         ),

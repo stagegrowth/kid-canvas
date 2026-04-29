@@ -1,23 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  앱 아이콘 전경(foreground).
+  배경(#FFC1CC 분홍) 위에 흰 팔레트 + 다섯 가지 물감 + 엄지 구멍.
+  108×108 viewport, 안전 영역(중심 66dp)을 크게 벗어나지 않도록 배치.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- 아이콘 임시: 흰색 팔레트(원 + 점 4개) 모양. M8 폴리싱에서 정식 아이콘으로 교체 -->
+
+    <!-- 흰 팔레트 본체. 왼쪽 아래로 살짝 부풀어 엄지를 끼우는 형태. -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M54,30 m-18,0 a18,18 0 1,0 36,0 a18,18 0 1,0 -36,0 z" />
+        android:pathData="M 32,36 L 80,36 Q 88,36 88,44 L 88,70 Q 88,78 80,78 L 32,78 Q 22,78 22,57 Q 22,36 32,36 Z" />
+
+    <!-- 엄지 구멍 — 배경색과 같은 분홍으로 뚫어 보이게 -->
     <path
-        android:fillColor="#FF5A8C"
-        android:pathData="M48,28 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
+        android:fillColor="#FFC1CC"
+        android:pathData="M 32,57 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 z" />
+
+    <!-- 물감 5색 (윗줄 빨/노, 아랫줄 초/파, 오른쪽 보) -->
     <path
-        android:fillColor="#FFE74C"
-        android:pathData="M60,28 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
+        android:fillColor="#FFFF5252"
+        android:pathData="M 50,46 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
     <path
-        android:fillColor="#4D96FF"
-        android:pathData="M48,36 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
+        android:fillColor="#FFFFE74C"
+        android:pathData="M 64,46 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
     <path
-        android:fillColor="#6BCB77"
-        android:pathData="M60,36 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 z" />
+        android:fillColor="#FF6BCB77"
+        android:pathData="M 50,68 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
+    <path
+        android:fillColor="#FF4D96FF"
+        android:pathData="M 64,68 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
+    <path
+        android:fillColor="#FFB362FF"
+        android:pathData="M 78,57 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
 </vector>
