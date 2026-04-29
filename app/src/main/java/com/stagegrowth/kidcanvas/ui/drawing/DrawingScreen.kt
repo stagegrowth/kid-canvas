@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -28,13 +30,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 
 /**
- * M4 드로잉 화면.
- * 레이아웃 (위에서 아래로):
- *   TopActionBar (뒤로/이름/되돌리기/처음부터)
- *   정사각 캔버스 (z=0 흰 배경 / z=1 사용자 그림 / z=2 외곽선)
- *   ToolBar (붓 / 지우개)
- *   StrokeWidthPicker (8 / 16 / 28dp)
- *   ColorPalette (5칼럼 × 4행, 총 20색)
+ * 가로 모드 우선 색칠 화면. 위에서 아래로:
+ *   [상단 액션 바: 뒤로 | 붓·지우개 토글 | 이름 | Undo · Reset]
+ *   [Row 4 분할:
+ *     - 캔버스 (~75%)            정사각 비율 유지, 외곽선 z=2 오버레이
+ *     - 세로 색상 띠 + ▶ (~13%)   드래그/탭으로 색 선택, 인디케이터가 따라 이동
+ *     - 연필 굵기 (~12%)          연필 3개 (얇/중/굵), 촉이 현재 색으로 칠해짐
+ *   ]
+ *
+ * 기존 가로 ColorPalette / StrokeWidthPicker / 큰 ToolBar 는 제거.
  */
 @Composable
 fun DrawingScreen(
@@ -51,74 +55,77 @@ fun DrawingScreen(
     ) {
         TopActionBar(
             title = uiState.targetName,
+            currentTool = uiState.currentTool,
             onBack = { /* M7 NavGraph 도입 시 */ },
+            onToolSelected = viewModel::changeTool,
             onUndo = viewModel::undo,
             onResetRequest = { showResetDialog = true },
             canUndo = uiState.strokes.isNotEmpty(),
         )
 
-        BoxWithConstraints(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center,
+                .weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 짧은 변 기준 정사각형
-            val side = if (maxWidth < maxHeight) maxWidth else maxHeight
-
-            Box(
+            // (1) 캔버스 ~75% — 정사각 비율 유지
+            BoxWithConstraints(
                 modifier = Modifier
-                    .size(side)
-                    .background(Color.White), // z=0 흰 배경 (graphicsLayer 외부)
+                    .weight(75f)
+                    .fillMaxHeight()
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                // z=1 사용자 드로잉 (graphicsLayer Offscreen 안에서 BlendMode 처리)
-                DrawingCanvas(
-                    strokes = uiState.strokes,
-                    currentStroke = uiState.currentStroke,
-                    onStrokeStart = viewModel::onDragStart,
-                    onStrokeUpdate = viewModel::onDrag,
-                    onStrokeEnd = viewModel::onDragEnd,
-                    modifier = Modifier.fillMaxSize(),
-                )
-
-                // z=2 외곽선
-                val outlinePath = uiState.outlinePath
-                if (outlinePath != null) {
-                    AsyncImage(
-                        model = "file:///android_asset/$outlinePath",
-                        contentDescription = null,
+                val side = if (maxWidth < maxHeight) maxWidth else maxHeight
+                Box(
+                    modifier = Modifier
+                        .size(side)
+                        .background(Color.White), // z=0 흰 배경 (graphicsLayer 외부)
+                ) {
+                    DrawingCanvas(
+                        strokes = uiState.strokes,
+                        currentStroke = uiState.currentStroke,
+                        onStrokeStart = viewModel::onDragStart,
+                        onStrokeUpdate = viewModel::onDrag,
+                        onStrokeEnd = viewModel::onDragEnd,
                         modifier = Modifier.fillMaxSize(),
                     )
-                } else {
-                    OutlinePlaceholder(modifier = Modifier.fillMaxSize())
+                    val outlinePath = uiState.outlinePath
+                    if (outlinePath != null) {
+                        AsyncImage(
+                            model = "file:///android_asset/$outlinePath",
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        OutlinePlaceholder(modifier = Modifier.fillMaxSize())
+                    }
                 }
             }
+
+            // (2) 세로 색상 띠 + ▶ 인디케이터 ~13% (10 + 3)
+            VerticalColorPickerArea(
+                colors = DefaultStripColors,
+                selectedColor = uiState.currentColor,
+                onColorSelected = viewModel::changeColor,
+                modifier = Modifier
+                    .weight(13f)
+                    .fillMaxHeight()
+                    .padding(vertical = 8.dp),
+            )
+
+            // (3) 연필 굵기 ~12%
+            PencilWidthPicker(
+                currentWidthDp = uiState.currentWidthDp,
+                onWidthSelected = viewModel::changeWidthDp,
+                currentColor = uiState.currentColor,
+                modifier = Modifier
+                    .weight(12f)
+                    .fillMaxHeight()
+                    .padding(8.dp),
+            )
         }
-
-        ToolBar(
-            currentTool = uiState.currentTool,
-            onToolSelected = viewModel::changeTool,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 2.dp),
-        )
-
-        StrokeWidthPicker(
-            currentWidthDp = uiState.currentWidthDp,
-            onWidthSelected = viewModel::changeWidthDp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 2.dp),
-        )
-
-        ColorPalette(
-            selectedColor = uiState.currentColor,
-            onColorSelected = viewModel::changeColor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        )
     }
 
     if (showResetDialog) {
