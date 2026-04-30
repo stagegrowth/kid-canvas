@@ -158,6 +158,176 @@
       ]
     },
     {
+      "id": "train",
+      "name": "기차",
+      "themeColor": "#4D96FF",
+      "thumbnail": null,
+      "targets": [
+        {
+          "id": "tr_train_01",
+          "name": "기차 1",
+          "outline": "outlines/tr_train_01.png",
+          "thumbnail": "thumbs/tr_train_01.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_02",
+          "name": "기차 2",
+          "outline": "outlines/tr_train_02.png",
+          "thumbnail": "thumbs/tr_train_02.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_03",
+          "name": "기차 3",
+          "outline": "outlines/tr_train_03.png",
+          "thumbnail": "thumbs/tr_train_03.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_04",
+          "name": "기차 4",
+          "outline": "outlines/tr_train_04.png",
+          "thumbnail": "thumbs/tr_train_04.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_05",
+          "name": "기차 5",
+          "outline": "outlines/tr_train_05.png",
+          "thumbnail": "thumbs/tr_train_05.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_06",
+          "name": "기차 6",
+          "outline": "outlines/tr_train_06.png",
+          "thumbnail": "thumbs/tr_train_06.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_07",
+          "name": "기차 7",
+          "outline": "outlines/tr_train_07.png",
+          "thumbnail": "thumbs/tr_train_07.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_08",
+          "name": "기차 8",
+          "outline": "outlines/tr_train_08.png",
+          "thumbnail": "thumbs/tr_train_08.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_09",
+          "name": "기차 9",
+          "outline": "outlines/tr_train_09.png",
+          "thumbnail": "thumbs/tr_train_09.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "tr_train_10",
+          "name": "기차 10",
+          "outline": "outlines/tr_train_10.png",
+          "thumbnail": "thumbs/tr_train_10.png",
+          "addedAt": 1777591980761
+        }
+      ]
+    },
+    {
+      "id": "car",
+      "name": "자동차",
+      "themeColor": "#FF5252",
+      "thumbnail": null,
+      "targets": [
+        {
+          "id": "cr_car_01",
+          "name": "자동차 1",
+          "outline": "outlines/cr_car_01.png",
+          "thumbnail": "thumbs/cr_car_01.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_02",
+          "name": "자동차 2",
+          "outline": "outlines/cr_car_02.png",
+          "thumbnail": "thumbs/cr_car_02.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_03",
+          "name": "자동차 3",
+          "outline": "outlines/cr_car_03.png",
+          "thumbnail": "thumbs/cr_car_03.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_04",
+          "name": "자동차 4",
+          "outline": "outlines/cr_car_04.png",
+          "thumbnail": "thumbs/cr_car_04.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_05",
+          "name": "자동차 5",
+          "outline": "outlines/cr_car_05.png",
+          "thumbnail": "thumbs/cr_car_05.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_06",
+          "name": "자동차 6",
+          "outline": "outlines/cr_car_06.png",
+          "thumbnail": "thumbs/cr_car_06.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_07",
+          "name": "자동차 7",
+          "outline": "outlines/cr_car_07.png",
+          "thumbnail": "thumbs/cr_car_07.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_08",
+          "name": "자동차 8",
+          "outline": "outlines/cr_car_08.png",
+          "thumbnail": "thumbs/cr_car_08.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_09",
+          "name": "자동차 9",
+          "outline": "outlines/cr_car_09.png",
+          "thumbnail": "thumbs/cr_car_09.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_10",
+          "name": "자동차 10",
+          "outline": "outlines/cr_car_10.png",
+          "thumbnail": "thumbs/cr_car_10.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_11",
+          "name": "자동차 11",
+          "outline": "outlines/cr_car_11.png",
+          "thumbnail": "thumbs/cr_car_11.png",
+          "addedAt": 1777591980761
+        },
+        {
+          "id": "cr_car_12",
+          "name": "자동차 12",
+          "outline": "outlines/cr_car_12.png",
+          "thumbnail": "thumbs/cr_car_12.png",
+          "addedAt": 1777591980761
+        }
+      ]
+    },
+    {
       "id": "animals",
       "name": "동물 친구들",
       "themeColor": "#A5D6A7",
