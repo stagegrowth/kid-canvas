@@ -328,31 +328,150 @@
       ]
     },
     {
-      "id": "animals",
-      "name": "동물 친구들",
-      "themeColor": "#A5D6A7",
-      "thumbnail": "thumbs/animals.png",
+      "id": "animal",
+      "name": "동물",
+      "themeColor": "#6BCB77",
+      "thumbnail": null,
       "targets": [
         {
-          "id": "an_bear",
-          "name": "곰돌이",
-          "outline": "outlines/an_bear.png",
-          "thumbnail": "thumbs/an_bear.png",
-          "addedAt": 0
+          "id": "an_drinking_water",
+          "name": "물 마시는 곰",
+          "outline": "outlines/an_drinking_water.png",
+          "thumbnail": "thumbs/an_drinking_water.png",
+          "addedAt": 1777592927965
         },
         {
-          "id": "an_rabbit",
-          "name": "토끼",
-          "outline": "outlines/an_rabbit.png",
-          "thumbnail": "thumbs/an_rabbit.png",
-          "addedAt": 0
+          "id": "an_eating_snack",
+          "name": "간식 먹는 동물",
+          "outline": "outlines/an_eating_snack.png",
+          "thumbnail": "thumbs/an_eating_snack.png",
+          "addedAt": 1777592927965
         },
         {
-          "id": "an_cat",
-          "name": "고양이",
-          "outline": "outlines/an_cat.png",
-          "thumbnail": "thumbs/an_cat.png",
-          "addedAt": 0
+          "id": "an_holding_ball",
+          "name": "공 든 동물",
+          "outline": "outlines/an_holding_ball.png",
+          "thumbnail": "thumbs/an_holding_ball.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_hugging_heart",
+          "name": "하트 안은 동물",
+          "outline": "outlines/an_hugging_heart.png",
+          "thumbnail": "thumbs/an_hugging_heart.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_in_hat",
+          "name": "모자 쓴 동물",
+          "outline": "outlines/an_in_hat.png",
+          "thumbnail": "thumbs/an_in_hat.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_in_pajamas",
+          "name": "잠옷 입은 동물",
+          "outline": "outlines/an_in_pajamas.png",
+          "thumbnail": "thumbs/an_in_pajamas.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_on_rock",
+          "name": "바위 위 동물",
+          "outline": "outlines/an_on_rock.png",
+          "thumbnail": "thumbs/an_on_rock.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_on_scooter",
+          "name": "스쿠터 강아지",
+          "outline": "outlines/an_on_scooter.png",
+          "thumbnail": "thumbs/an_on_scooter.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_playing_drum",
+          "name": "드럼 치는 동물",
+          "outline": "outlines/an_playing_drum.png",
+          "thumbnail": "thumbs/an_playing_drum.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_standing_tall",
+          "name": "키 큰 동물",
+          "outline": "outlines/an_standing_tall.png",
+          "thumbnail": "thumbs/an_standing_tall.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_wearing_shoes",
+          "name": "신발 신은 동물",
+          "outline": "outlines/an_wearing_shoes.png",
+          "thumbnail": "thumbs/an_wearing_shoes.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_with_balloon",
+          "name": "풍선 든 동물",
+          "outline": "outlines/an_with_balloon.png",
+          "thumbnail": "thumbs/an_with_balloon.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_with_bow",
+          "name": "리본 단 동물",
+          "outline": "outlines/an_with_bow.png",
+          "thumbnail": "thumbs/an_with_bow.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_with_cupcake",
+          "name": "컵케이크 동물",
+          "outline": "outlines/an_with_cupcake.png",
+          "thumbnail": "thumbs/an_with_cupcake.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_with_star",
+          "name": "별과 동물",
+          "outline": "outlines/an_with_star.png",
+          "thumbnail": "thumbs/an_with_star.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_with_umbrella",
+          "name": "우산 든 동물",
+          "outline": "outlines/an_with_umbrella.png",
+          "thumbnail": "thumbs/an_with_umbrella.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_baby_sitting",
+          "name": "앉은 아기 동물",
+          "outline": "outlines/an_baby_sitting.png",
+          "thumbnail": "thumbs/an_baby_sitting.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_happy_waving",
+          "name": "인사하는 동물",
+          "outline": "outlines/an_happy_waving.png",
+          "thumbnail": "thumbs/an_happy_waving.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_sleeping",
+          "name": "잠자는 동물",
+          "outline": "outlines/an_sleeping.png",
+          "thumbnail": "thumbs/an_sleeping.png",
+          "addedAt": 1777592927965
+        },
+        {
+          "id": "an_smiling_face",
+          "name": "웃는 동물 얼굴",
+          "outline": "outlines/an_smiling_face.png",
+          "thumbnail": "thumbs/an_smiling_face.png",
+          "addedAt": 1777592927965
         }
       ]
     }
