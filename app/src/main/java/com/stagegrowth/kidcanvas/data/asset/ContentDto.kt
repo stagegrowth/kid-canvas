@@ -20,7 +20,8 @@ data class CategoryDto(
     val id: String,
     val name: String,
     val themeColor: String,
-    val thumbnail: String,
+    /** 빌드 도구가 카테고리 대표 썸네일을 안 만들었으면 null 가능. */
+    val thumbnail: String? = null,
     val targets: List<ColoringTargetDto> = emptyList(),
 ) {
     fun toDomain(): Category = Category(
