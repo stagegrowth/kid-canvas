@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stagegrowth.kidcanvas.data.asset.OutlineBitmapCache
 import com.stagegrowth.kidcanvas.data.repository.ColoringRepository
 import com.stagegrowth.kidcanvas.domain.model.DrawingState
 import com.stagegrowth.kidcanvas.domain.model.NormalizedPoint
@@ -20,16 +21,23 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 드로잉 화면 상태 보유 + 사용자 입력 처리 + 자동 저장/복원.
+ * 드로잉 화면 상태 보유 + 사용자 입력 처리 + 자동 저장/복원 + 영역 인식 자유 드로잉.
  *
  * Spring 비유:
  *   - @Service. StateFlow 가 응답 모델, on*() 가 핸들러.
  *   - viewModelScope.launch 는 ViewModel 라이프사이클에 묶인 @Async 컨텍스트 (화면 종료 시 자동 취소).
  *   - SavedStateHandle 의 KEY_TARGET_ID 는 NavGraph 의 route "drawing/{targetId}" 에 의해 자동 채워짐.
+ *
+ * 영역 인식 자유 드로잉 (M3.5):
+ *   - 첫 터치(BRUSH) 위치를 seed 로 보관, 비동기로 외곽선 BFS Flood Fill → 영역 마스크 생성.
+ *   - 드래그 중에는 currentStroke 점들이 그대로 들어가지만, 렌더 시 마스크로 클리핑되어
+ *     색이 영역 밖으로 새지 않음.
+ *   - ERASER, 외곽선 위 시작은 마스크 없이 자유 드로잉 유지.
  */
 @HiltViewModel
 class DrawingViewModel @Inject constructor(
     private val repository: ColoringRepository,
+    private val outlineCache: OutlineBitmapCache,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -41,7 +49,7 @@ class DrawingViewModel @Inject constructor(
     init {
         if (targetId.isNotBlank()) {
             viewModelScope.launch {
-                // 1) 메타데이터(이름, 외곽선) 해석
+                // 1) 메타데이터(이름, 외곽선 path) 해석
                 val target = repository.getCategories().first()
                     .flatMap { it.targets }
                     .firstOrNull { it.id == targetId }
@@ -54,6 +62,12 @@ class DrawingViewModel @Inject constructor(
                 val saved = repository.getDrawingState(targetId).first()
                 if (saved != null && saved.strokes.isNotEmpty()) {
                     _uiState.update { it.copy(strokes = saved.strokes) }
+                    // 3) 복원된 stroke 들이 쓴 unique seed 들의 마스크를 백그라운드 워밍.
+                    //    워밍 끝나기 전엔 잠시 자유 드로잉처럼 보이지만, 보통 200~600ms 안에 보정됨.
+                    val outlinePath = target?.outline
+                    if (outlinePath != null) {
+                        warmMasks(outlinePath, saved.strokes.mapNotNull { it.seed }.distinct())
+                    }
                 }
             }
         }
@@ -61,15 +75,41 @@ class DrawingViewModel @Inject constructor(
 
     fun onDragStart(offset: Offset, canvasSize: IntSize) {
         val point = offset.toNormalized(canvasSize)
-        _uiState.update { state ->
-            state.copy(
+        val state = _uiState.value
+        val outlinePath = state.outlinePath
+
+        // 지우개는 영역 인식 안 함 (기존 동작 유지). 외곽선 path 모르면 자유 드로잉.
+        val needRegion = state.currentTool == Tool.BRUSH && outlinePath != null
+
+        _uiState.update { st ->
+            st.copy(
                 currentStroke = Stroke(
-                    color = state.currentColor,
-                    widthDp = state.currentWidthDp,
-                    tool = state.currentTool,
+                    color = st.currentColor,
+                    widthDp = st.currentWidthDp,
+                    tool = st.currentTool,
                     points = listOf(point),
-                )
+                    seed = if (needRegion) point else null,
+                ),
+                activeMask = null, // 영역 마스크 계산 전엔 자유 드로잉처럼 보이다가 도착 시 클리핑됨
             )
+        }
+
+        if (needRegion && outlinePath != null) {
+            viewModelScope.launch {
+                val region = outlineCache.regionFor(outlinePath, point.x, point.y)
+                val bitmap = region.bitmap
+                _uiState.update { st ->
+                    // 사용자가 이 stroke 끝낸 직후라면 무시 (race)
+                    val cur = st.currentStroke
+                    if (cur == null || cur.seed != point) st
+                    else if (bitmap == null) st // 외곽선 위 시작 → 자유 드로잉 (마스크 없음)
+                    else st.copy(
+                        activeMask = bitmap,
+                        // 완료 시점에 maskBySeed 도 미리 채워둬서 onDragEnd 후 즉시 활용
+                        maskBySeed = st.maskBySeed + (point to bitmap),
+                    )
+                }
+            }
         }
     }
 
@@ -87,6 +127,7 @@ class DrawingViewModel @Inject constructor(
             state.copy(
                 strokes = state.strokes + cur,
                 currentStroke = null,
+                activeMask = null,
             )
         }
         persistCurrent()
@@ -108,7 +149,14 @@ class DrawingViewModel @Inject constructor(
 
     /** 전체 초기화. 다이얼로그 확인 후에만 호출되어야 함. DB 의 저장 행도 제거. */
     fun reset() {
-        _uiState.update { it.copy(strokes = emptyList(), currentStroke = null) }
+        _uiState.update {
+            it.copy(
+                strokes = emptyList(),
+                currentStroke = null,
+                activeMask = null,
+                // 마스크 캐시는 유지 — 같은 캐릭터에 다시 그릴 때 즉시 재사용.
+            )
+        }
         viewModelScope.launch {
             repository.resetDrawing(targetId)
         }
@@ -138,6 +186,15 @@ class DrawingViewModel @Inject constructor(
                     updatedAt = System.currentTimeMillis(),
                 )
             )
+        }
+    }
+
+    /** 복원된 stroke 들의 unique seed 마스크를 미리 계산해 maskBySeed 에 채움. */
+    private suspend fun warmMasks(outlinePath: String, seeds: List<NormalizedPoint>) {
+        for (seed in seeds) {
+            val region = outlineCache.regionFor(outlinePath, seed.x, seed.y)
+            val bm = region.bitmap ?: continue
+            _uiState.update { it.copy(maskBySeed = it.maskBySeed + (seed to bm)) }
         }
     }
 

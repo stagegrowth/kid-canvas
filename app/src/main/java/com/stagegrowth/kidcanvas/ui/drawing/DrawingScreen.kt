@@ -87,6 +87,8 @@ fun DrawingScreen(
                     DrawingCanvas(
                         strokes = uiState.strokes,
                         currentStroke = uiState.currentStroke,
+                        activeMask = uiState.activeMask,
+                        maskBySeed = uiState.maskBySeed,
                         onStrokeStart = viewModel::onDragStart,
                         onStrokeUpdate = viewModel::onDrag,
                         onStrokeEnd = viewModel::onDragEnd,
