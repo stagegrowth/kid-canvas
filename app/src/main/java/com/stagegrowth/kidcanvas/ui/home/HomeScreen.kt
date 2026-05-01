@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * 5살용 홈 화면.
@@ -213,30 +214,38 @@ private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
     }
 }
 
-/** 둥근 알약 모양 시작 버튼 + 분홍 그라데이션 + 그림자. 5살이 누르고 싶게 큼지막. */
+/**
+ * 둥근 알약 모양 시작 버튼.
+ *
+ * 한국어 폰트 합성 Bold 회피:
+ *   - headlineSmall.copy(fontWeight = Bold) 처럼 스타일 위에 Bold 를 강제로 얹으면
+ *     한국어 폴백 폰트가 Bold variant 가 없을 때 합성 Bold 가 적용되어 글리프가 뭉개져 보임.
+ *   - fontSize / fontWeight 를 직접 지정 + maxLines/softWrap 으로 안전하게.
+ *   - 그라데이션·extreme rounded(percent=50) 조합도 일부 안드로이드에서 깨끗하지 않아
+ *     솔리드 분홍 + 고정 28dp 라운드로 단순화.
+ */
 @Composable
 private fun StartButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(percent = 50)
+    val shape = RoundedCornerShape(28.dp)
     Box(
         modifier = modifier
-            .shadow(elevation = 6.dp, shape = shape)
+            .shadow(elevation = 4.dp, shape = shape, clip = false)
             .clip(shape)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFF8AB0), Color(0xFFE91E63)),
-                ),
-            )
+            .background(Color(0xFFE91E63))
             .clickable(onClick = onClick)
-            .padding(horizontal = 48.dp, vertical = 18.dp),
+            .padding(horizontal = 40.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "시작하기",
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold,
             color = Color.White,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
