@@ -29,46 +29,57 @@ import androidx.compose.ui.unit.dp
  * 한 화면에 13~15 개 정도 보이고 LazyColumn 으로 스크롤.
  */
 val DefaultStripColors: List<Long> = listOf(
+    // 흰·노랑 계열
     0xFFFFFFFFL, // 흰색
     0xFFFFF59DL, // 라이트 옐로우
     0xFFFFE74CL, // 노랑
     0xFFFFC107L, // 진한 노랑
+    // 살구·주황 계열 (피치는 살구 옆 자연 자리)
     0xFFFFD8B5L, // 살구
+    0xFFFFCBA4L, // 피치
     0xFFFFCC80L, // 옅은 주황
     0xFFFFB84DL, // 주황
     0xFFFF9800L, // 진한 주황
+    // 코랄·빨강
     0xFFFF7043L, // 코랄
     0xFFFF5252L, // 빨강 (default)
     0xFFD32F2FL, // 진한 빨강
+    // 분홍 계열
     0xFFFF5A8CL, // 분홍
     0xFFE91E63L, // 핫핑크
     0xFFFFC0CBL, // 연분홍
     0xFFF8BBD0L, // 로즈
+    // 보라 계열 (라벤더는 라일락 옆)
     0xFFCE93D8L, // 라일락
+    0xFFB39DDBL, // 라벤더
     0xFFB362FFL, // 보라
     0xFF7B1FA2L, // 진한 보라
+    // 파랑 계열
     0xFF5C6BC0L, // 인디고
     0xFF4D96FFL, // 파랑
     0xFF1976D2L, // 진한 파랑
+    // 청록·민트 (민트크림은 민트 옆)
     0xFF00CED1L, // 하늘
     0xFF4DD0E1L, // 청록
     0xFF80CBC4L, // 민트
+    0xFFB2DFDBL, // 민트크림
+    // 초록 계열
     0xFFA5D6A7L, // 옅은 초록
     0xFF6BCB77L, // 초록
     0xFF388E3CL, // 진한 초록
+    // 올리브·베이지 (오트밀은 베이지 옆)
     0xFF9E9D24L, // 올리브
-    0xFFF5DEB3L, // 베이지
     0xFFBDB76BL, // 카키
+    0xFFF5DEB3L, // 베이지
+    0xFFE6D5B8L, // 오트밀
+    // 갈색 계열
+    0xFFC68642L, // 카멜
     0xFF8B4513L, // 갈색
     0xFF5D4037L, // 진한 갈색
-    0xFFC68642L, // 카멜
+    // 무채색 — 끝점은 검정
     0xFFBDBDBDL, // 회색
     0xFF616161L, // 진한 회색
     0xFF2C2C2AL, // 검정
-    0xFFB39DDBL, // 라벤더
-    0xFFFFCBA4L, // 피치
-    0xFFB2DFDBL, // 민트크림
-    0xFFE6D5B8L, // 오트밀
 )
 
 /**
