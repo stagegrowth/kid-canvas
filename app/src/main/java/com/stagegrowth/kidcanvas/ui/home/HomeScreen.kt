@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -28,6 +29,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -216,42 +219,32 @@ private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
 }
 
 /**
- * 둥근 알약 모양 시작 버튼.
+ * 둥근 시작 버튼. Material3 Button 으로 단순화 — Korean 글리프 클립·합성 Bold 등 텍스트 렌더 이슈를
+ * Compose Material 기본값에 위임. 우리는 모양·색·padding 만 지정.
  *
- * 한국어 폰트 합성 Bold 회피:
- *   - headlineSmall.copy(fontWeight = Bold) 처럼 스타일 위에 Bold 를 강제로 얹으면
- *     한국어 폴백 폰트가 Bold variant 가 없을 때 합성 Bold 가 적용되어 글리프가 뭉개져 보임.
- *   - fontSize / fontWeight 를 직접 지정 + maxLines/softWrap 으로 안전하게.
- *   - 그라데이션·extreme rounded(percent=50) 조합도 일부 안드로이드에서 깨끗하지 않아
- *     솔리드 분홍 + 고정 28dp 라운드로 단순화.
+ * lineHeight 는 fontSize 보다 충분히 크게 잡아야 한국어 받침/내림 글리프가 잘리지 않음 (22sp → 36sp).
  */
 @Composable
 private fun StartButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(28.dp)
-    Box(
-        modifier = modifier
-            .shadow(elevation = 4.dp, shape = shape, clip = false)
-            .clip(shape)
-            .background(Color(0xFFE91E63))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 40.dp, vertical = 16.dp),
-        contentAlignment = Alignment.Center,
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(28.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFE91E63),
+            contentColor = Color.White,
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+        contentPadding = PaddingValues(horizontal = 40.dp, vertical = 14.dp),
     ) {
-        // Compose 의 기본 텍스트는 includeFontPadding = false 라 한국어 받침 descender 가
-        // tight line-height 안으로 들어가지 않아 잘려 보일 수 있음. Material typography 의
-        // calibrated lineHeight 를 가져와 색·굵기만 덮고, includeFontPadding = true 로 안전 마진 확보.
         Text(
             text = "시작하기",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                platformStyle = PlatformTextStyle(includeFontPadding = true),
-            ),
-            maxLines = 1,
-            softWrap = false,
+            fontSize = 22.sp,
+            lineHeight = 36.sp,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
