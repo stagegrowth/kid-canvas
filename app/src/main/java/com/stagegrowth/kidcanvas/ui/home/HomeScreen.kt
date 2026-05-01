@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -236,14 +237,19 @@ private fun StartButton(
             .clip(shape)
             .background(Color(0xFFE91E63))
             .clickable(onClick = onClick)
-            .padding(horizontal = 40.dp, vertical = 14.dp),
+            .padding(horizontal = 40.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
+        // Compose 의 기본 텍스트는 includeFontPadding = false 라 한국어 받침 descender 가
+        // tight line-height 안으로 들어가지 않아 잘려 보일 수 있음. Material typography 의
+        // calibrated lineHeight 를 가져와 색·굵기만 덮고, includeFontPadding = true 로 안전 마진 확보.
         Text(
             text = "시작하기",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.White,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                platformStyle = PlatformTextStyle(includeFontPadding = true),
+            ),
             maxLines = 1,
             softWrap = false,
         )
