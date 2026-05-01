@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.stagegrowth.kidcanvas.domain.model.Tool
 
 /**
  * 가로 모드 우선 색칠 화면. 위에서 아래로:
@@ -57,6 +58,7 @@ fun DrawingScreen(
         TopActionBar(
             title = uiState.targetName,
             currentTool = uiState.currentTool,
+            currentColor = uiState.currentColor,
             onBack = onBack,
             onToolSelected = viewModel::changeTool,
             onUndo = viewModel::undo,
@@ -107,22 +109,24 @@ fun DrawingScreen(
                 }
             }
 
-            // (2) 세로 색상 띠 + ▶ 인디케이터 ~13% (10 + 3)
+            // (2) 세로 색상 띠 + ▶ 인디케이터 ~13% (지우개 모드면 비활성)
             VerticalColorPickerArea(
                 colors = DefaultStripColors,
                 selectedColor = uiState.currentColor,
                 onColorSelected = viewModel::changeColor,
+                enabled = uiState.currentTool == Tool.BRUSH,
                 modifier = Modifier
                     .weight(13f)
                     .fillMaxHeight()
                     .padding(vertical = 8.dp),
             )
 
-            // (3) 연필 굵기 ~12%
+            // (3) 연필 굵기 ~12% (지우개 모드면 비활성)
             PencilWidthPicker(
                 currentWidthDp = uiState.currentWidthDp,
                 onWidthSelected = viewModel::changeWidthDp,
                 currentColor = uiState.currentColor,
+                enabled = uiState.currentTool == Tool.BRUSH,
                 modifier = Modifier
                     .weight(12f)
                     .fillMaxHeight()

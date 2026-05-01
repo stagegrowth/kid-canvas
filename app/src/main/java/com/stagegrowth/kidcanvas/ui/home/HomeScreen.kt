@@ -1,5 +1,14 @@
 package com.stagegrowth.kidcanvas.ui.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,10 +16,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,61 +29,91 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /**
  * 5살용 홈 화면.
- *   - 화면의 ~70% 를 차지하는 거대한 "🎨 시작하기" 버튼 (탭 → 카테고리 화면)
- *   - 우상단에 갤러리/설정 placeholder 아이콘 (M8 이후 채울 자리)
- *   - 파스텔 배경 + 큰 폰트 + 동심 분위기
+ *   - 베이지 배경 위에 일러스트 + 타이틀 + 시작 버튼이 직접 배치 (분홍 박스 제거).
+ *   - 진입 시: 일러스트 fade+down 등장 → 살짝 늦게 시작 버튼 등장.
+ *   - 시작 버튼은 hover 처럼 위아래 부드럽게 떠다님 → "눌러봐" 신호.
+ *   - 우상단 갤러리/설정 placeholder (M8 이후 채울 자리).
+ *
+ * Spring 비유:
+ *   - rememberInfiniteTransition + animateFloat = CSS @keyframes 무한 반복.
+ *   - animateFloatAsState = 단발성 transition. 값 바뀌면 부드럽게.
  */
 @Composable
 fun HomeScreen(
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val bg = Color(0xFFFFF5E6)
+
+    // 진입 등장 트리거 — 한 번만 true 로 전환되면 됨.
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+
+    val illustrationAlpha by animateFloatAsState(
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "illustrationAlpha",
+    )
+    val illustrationOffsetY by animateDpAsState(
+        targetValue = if (entered) 0.dp else (-20).dp,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "illustrationOffset",
+    )
+    val buttonAlpha by animateFloatAsState(
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 200, easing = FastOutSlowInEasing),
+        label = "buttonAlpha",
+    )
+
+    // 시작 버튼이 살짝 떠다니는 hover 애니메이션.
+    val infinite = rememberInfiniteTransition(label = "hover")
+    val hoverYpx by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = -6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "hoverY",
+    )
+    val hoverY = hoverYpx.dp
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFFF6E0)),
+            .background(bg),
     ) {
-        // 우상단 placeholder 아이콘 (현재 동작 없음)
-        Row(
+        TopRightActions(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            IconButton(onClick = { /* M8: 갤러리 화면 */ }, modifier = Modifier.size(56.dp)) {
-                Icon(
-                    imageVector = Icons.Outlined.Image,
-                    contentDescription = "갤러리(준비 중)",
-                    tint = Color(0xFF8D6E63),
-                )
-            }
-            IconButton(onClick = { /* M8: 설정 화면 */ }, modifier = Modifier.size(56.dp)) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "설정(준비 중)",
-                    tint = Color(0xFF8D6E63),
-                )
-            }
-        }
+            bg = bg,
+        )
 
-        // 본문 — 큰 시작 버튼
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,51 +121,165 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            HomeIllustration(
+                bg = bg,
+                modifier = Modifier
+                    .fillMaxWidth(0.45f)
+                    .aspectRatio(1f)
+                    .alpha(illustrationAlpha)
+                    .offset(y = illustrationOffsetY),
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             Text(
                 text = "오늘은 뭐 그릴까?",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color(0xFF5D4037),
+                modifier = Modifier.alpha(illustrationAlpha),
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            StartButton(onClick = onStart)
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            StartButton(
+                onClick = onStart,
+                modifier = Modifier
+                    .alpha(buttonAlpha)
+                    .offset(y = hoverY),
+            )
         }
     }
 }
 
-/** 화면 70% 비중을 갖는 둥근 카드형 시작 버튼. 큰 이모지 + 큰 글씨. */
+/**
+ * Compose Canvas 로 그린 색칠 팔레트 일러스트.
+ * 시스템 이모지(🎨)는 OS 마다 다르게 보여서 직접 그림.
+ *   - 흰 둥근 팔레트 본체
+ *   - 엄지 구멍 (배경색과 동일하게 뚫린 듯)
+ *   - 6 색 페인트 점이 위 3개 / 아래 3개 배열
+ */
 @Composable
-private fun StartButton(onClick: () -> Unit) {
+private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
+    val paintColors = remember {
+        listOf(
+            Color(0xFFFF5252), // 빨강
+            Color(0xFFFFE74C), // 노랑
+            Color(0xFF6BCB77), // 초록
+            Color(0xFF4D96FF), // 파랑
+            Color(0xFFB362FF), // 보라
+            Color(0xFFFF7043), // 코랄
+        )
+    }
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // 팔레트 본체 (둥근 사각형). 좌우 padding 두고 중심에 큼지막하게.
+        val paletteLeft = w * 0.08f
+        val paletteTop = h * 0.22f
+        val paletteW = w * 0.84f
+        val paletteH = h * 0.6f
+        drawRoundRect(
+            color = Color.White,
+            topLeft = Offset(paletteLeft, paletteTop),
+            size = Size(paletteW, paletteH),
+            cornerRadius = CornerRadius(w * 0.12f),
+        )
+
+        // 엄지 구멍 — 배경색으로 채우면 뚫린 것처럼 보임.
+        drawCircle(
+            color = bg,
+            radius = w * 0.07f,
+            center = Offset(paletteLeft + paletteW * 0.15f, paletteTop + paletteH * 0.55f),
+        )
+
+        // 6 색 점 — 위 3, 아래 3.
+        val dotR = w * 0.06f
+        val dotsLeft = paletteLeft + paletteW * 0.36f
+        val dotsRight = paletteLeft + paletteW * 0.92f
+        val xs = listOf(
+            dotsLeft,
+            dotsLeft + (dotsRight - dotsLeft) * 0.5f,
+            dotsRight,
+        )
+        val yTop = paletteTop + paletteH * 0.32f
+        val yBottom = paletteTop + paletteH * 0.7f
+        for (i in 0..2) {
+            drawCircle(paintColors[i], radius = dotR, center = Offset(xs[i], yTop))
+        }
+        for (i in 0..2) {
+            drawCircle(paintColors[i + 3], radius = dotR, center = Offset(xs[i], yBottom))
+        }
+    }
+}
+
+/** 둥근 알약 모양 시작 버튼 + 분홍 그라데이션 + 그림자. 5살이 누르고 싶게 큼지막. */
+@Composable
+private fun StartButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(percent = 50)
     Box(
-        modifier = Modifier
-            .fillMaxWidth(0.85f)
-            .fillMaxHeight(0.7f)
-            .clip(RoundedCornerShape(32.dp))
-            .background(Color(0xFFFFC1CC))
-            .clickable(onClick = onClick),
+        modifier = modifier
+            .shadow(elevation = 6.dp, shape = shape)
+            .clip(shape)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFFFF8AB0), Color(0xFFE91E63)),
+                ),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 48.dp, vertical = 18.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(text = "🎨", fontSize = 120.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            // 실제 5살이 못 읽어도 이모지로 충분히 의미 전달.
-            // 글자는 약간 거들어 주는 정도.
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .padding(horizontal = 32.dp, vertical = 12.dp),
-            ) {
-                Text(
-                    text = "시작하기",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color(0xFFD81B60),
-                    textAlign = TextAlign.Center,
-                )
-            }
+        Text(
+            text = "시작하기",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.White,
+        )
+    }
+}
+
+/** 우상단 placeholder 아이콘 (갤러리·설정). 부드러운 둥근 배경. */
+@Composable
+private fun TopRightActions(modifier: Modifier = Modifier, bg: Color) {
+    val tint = Color(0xFF8D6E63)
+    val chipBg = Color(0xFFF5E6CC) // 베이지보다 살짝 진한 톤
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ActionChip(bg = chipBg) {
+            Icon(
+                imageVector = Icons.Outlined.Image,
+                contentDescription = "갤러리(준비 중)",
+                tint = tint,
+                modifier = Modifier.size(28.dp),
+            )
         }
+        ActionChip(bg = chipBg) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "설정(준비 중)",
+                tint = tint,
+                modifier = Modifier.size(28.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionChip(bg: Color, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(bg),
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
     }
 }
 
