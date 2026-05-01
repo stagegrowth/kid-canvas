@@ -10,16 +10,14 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -44,15 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -80,25 +75,25 @@ fun HomeScreen(
 
     val illustrationAlpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "illustrationAlpha",
     )
     val illustrationOffsetY by animateDpAsState(
         targetValue = if (entered) 0.dp else (-20).dp,
-        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "illustrationOffset",
     )
     val buttonAlpha by animateFloatAsState(
         targetValue = if (entered) 1f else 0f,
-        animationSpec = tween(400, delayMillis = 200, easing = FastOutSlowInEasing),
+        animationSpec = tween(300, delayMillis = 200, easing = FastOutSlowInEasing),
         label = "buttonAlpha",
     )
 
-    // 시작 버튼이 살짝 떠다니는 hover 애니메이션.
+    // 시작 버튼이 위아래 부드럽게 떠다니는 hover 애니메이션 (-8dp ~ +8dp, 1.5s).
     val infinite = rememberInfiniteTransition(label = "hover")
     val hoverYpx by infinite.animateFloat(
-        initialValue = 0f,
-        targetValue = -6f,
+        initialValue = -8f,
+        targetValue = 8f,
         animationSpec = infiniteRepeatable(
             animation = tween(1500, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
@@ -107,16 +102,19 @@ fun HomeScreen(
     )
     val hoverY = hoverYpx.dp
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(bg),
     ) {
+        // 짧은 변의 25% — 가로 모드든 세로 모드든 일러스트가 적당한 크기.
+        val shortSide = if (maxWidth < maxHeight) maxWidth else maxHeight
+        val illustrationSize = shortSide * 0.25f
+
         TopRightActions(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(8.dp),
-            bg = bg,
         )
 
         Column(
@@ -129,8 +127,7 @@ fun HomeScreen(
             HomeIllustration(
                 bg = bg,
                 modifier = Modifier
-                    .fillMaxWidth(0.45f)
-                    .aspectRatio(1f)
+                    .size(illustrationSize)
                     .alpha(illustrationAlpha)
                     .offset(y = illustrationOffsetY),
             )
@@ -161,7 +158,7 @@ fun HomeScreen(
  * 시스템 이모지(🎨)는 OS 마다 다르게 보여서 직접 그림.
  *   - 흰 둥근 팔레트 본체
  *   - 엄지 구멍 (배경색과 동일하게 뚫린 듯)
- *   - 6 색 페인트 점이 위 3개 / 아래 3개 배열
+ *   - 5 색 점 (빨강·노랑·파랑·초록·분홍) — 위 3 / 아래 2 배열, 앱 다른 곳과 동일 톤.
  */
 @Composable
 private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
@@ -169,10 +166,9 @@ private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
         listOf(
             Color(0xFFFF5252), // 빨강
             Color(0xFFFFE74C), // 노랑
-            Color(0xFF6BCB77), // 초록
             Color(0xFF4D96FF), // 파랑
-            Color(0xFFB362FF), // 보라
-            Color(0xFFFF7043), // 코랄
+            Color(0xFF6BCB77), // 초록
+            Color(0xFFE91E63), // 분홍
         )
     }
     Canvas(modifier = modifier) {
@@ -198,11 +194,11 @@ private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
             center = Offset(paletteLeft + paletteW * 0.15f, paletteTop + paletteH * 0.55f),
         )
 
-        // 6 색 점 — 위 3, 아래 3.
+        // 5색 점 — 위 3 (빨강/노랑/파랑) / 아래 2 (초록/분홍, 가운데 정렬).
         val dotR = w * 0.06f
         val dotsLeft = paletteLeft + paletteW * 0.36f
         val dotsRight = paletteLeft + paletteW * 0.92f
-        val xs = listOf(
+        val xsTop = listOf(
             dotsLeft,
             dotsLeft + (dotsRight - dotsLeft) * 0.5f,
             dotsRight,
@@ -210,10 +206,15 @@ private fun HomeIllustration(bg: Color, modifier: Modifier = Modifier) {
         val yTop = paletteTop + paletteH * 0.32f
         val yBottom = paletteTop + paletteH * 0.7f
         for (i in 0..2) {
-            drawCircle(paintColors[i], radius = dotR, center = Offset(xs[i], yTop))
+            drawCircle(paintColors[i], radius = dotR, center = Offset(xsTop[i], yTop))
         }
-        for (i in 0..2) {
-            drawCircle(paintColors[i + 3], radius = dotR, center = Offset(xs[i], yBottom))
+        // 아래 2개는 위 3개의 가운데 두 자리 사이 (1/4, 3/4 간격) 에 배치.
+        val xsBottom = listOf(
+            dotsLeft + (dotsRight - dotsLeft) * 0.25f,
+            dotsLeft + (dotsRight - dotsLeft) * 0.75f,
+        )
+        for (i in 0..1) {
+            drawCircle(paintColors[i + 3], radius = dotR, center = Offset(xsBottom[i], yBottom))
         }
     }
 }
@@ -249,9 +250,9 @@ private fun StartButton(
     }
 }
 
-/** 우상단 placeholder 아이콘 (갤러리·설정). 부드러운 둥근 배경. */
+/** 우상단 placeholder 아이콘 (갤러리·설정). 부드러운 둥근 배경. 56dp 터치 타깃 보장. */
 @Composable
-private fun TopRightActions(modifier: Modifier = Modifier, bg: Color) {
+private fun TopRightActions(modifier: Modifier = Modifier) {
     val tint = Color(0xFF8D6E63)
     val chipBg = Color(0xFFF5E6CC) // 베이지보다 살짝 진한 톤
     Row(
