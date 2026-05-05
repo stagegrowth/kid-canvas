@@ -17,6 +17,18 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * bbox 계산용 알파 임계값. 외곽선 본체(검은 선)만 잡고 안티앨리어싱 회색은 제외해서
+ * 캐릭터 진짜 윤곽 박스를 얻는다. flood fill 의 [OUTLINE_THRESHOLD] 보다 엄격(100).
+ */
+private const val BBOX_OUTLINE_THRESHOLD: Int = 100
+
+/**
+ * bbox 여유 픽셀. 외곽선 살짝 안쪽까지 영역 인식을 인정해 자녀가 외곽선 바로 옆을 터치해도
+ * 자유 드로잉으로 폴백되지 않도록 한다.
+ */
+private const val BBOX_MARGIN: Int = 20
+
+/**
  * 외곽선 PNG 의 알파 채널을 한 번만 디코딩해 보관하고, seed → 영역 마스크 결과를 메모이제이션.
  *
  * Spring 비유: @Service + ConcurrentHashMap 캐시. 같은 영역 안의 다른 seed 가 들어와도
@@ -31,9 +43,9 @@ class OutlineBitmapCache @Inject constructor(
 ) {
 
     /**
-     * 외곽선 비트맵의 알파 배열 + 외곽선 픽셀 bbox(진단용).
-     * bbox 는 alpha ≥ OUTLINE_THRESHOLD 인 픽셀들의 최소/최대 x,y. 캐릭터가 없는 빈 영역이면
-     * left/top 이 right/bottom 보다 큰 채로 남아 isInsideBbox 판정이 항상 false.
+     * 외곽선 비트맵의 알파 배열 + 캐릭터 외곽 박스(방어 + 진단용).
+     * bbox 는 alpha ≥ [BBOX_OUTLINE_THRESHOLD] 인 픽셀들의 min/max + [BBOX_MARGIN] 여유.
+     * 캐릭터가 없는 빈 영역이면 left/top 이 right/bottom 보다 큰 채로 남아 박스 검사가 항상 false.
      */
     private data class OutlineData(
         val width: Int,
@@ -89,13 +101,17 @@ class OutlineBitmapCache @Inject constructor(
 
     /**
      * 정규화 좌표(0~1) seed → 그 픽셀이 속한 영역의 CachedRegion + 진단 정보.
-     * 외곽선 위에서 시작한 경우엔 region.mask=null 반환 (자유 드로잉).
+     * 다음 세 경우엔 region.mask/bitmap 모두 null (자유 드로잉 폴백):
+     *   - 캐릭터 외곽 박스 밖 터치 (BFS 자체를 생략, 가장 큰 누수 원인 차단)
+     *   - 외곽선 위에서 시작 ([floodFillRegion] 이 null 반환)
+     *   - BFS 결과 마스크가 전체의 50% 초과 ([floodFillRegion] 이 null 반환)
      *
      * 호출 흐름:
      *   1) assetPath 가 바뀌었으면 이전 캐릭터 캐시 비움 (메모리 절약)
      *   2) 외곽선 PNG 알파 배열 + bbox 로드 (캐시)
-     *   3) 같은 영역에 이미 계산된 마스크가 있으면 그걸 반환
-     *   4) 없으면 BFS Flood Fill + 1 px 침식, 결과를 캐시에 추가
+     *   3) 박스 밖 터치면 즉시 null 마스크 반환
+     *   4) 같은 영역에 이미 계산된 마스크가 있으면 그걸 반환
+     *   5) 없으면 BFS Flood Fill + 1 px 침식, 결과를 캐시에 추가
      */
     suspend fun regionFor(
         assetPath: String,
@@ -107,6 +123,23 @@ class OutlineBitmapCache @Inject constructor(
         val sy = (seedNormY * outline.height).toInt().coerceIn(0, outline.height - 1)
         val seedAlpha = outline.alpha[sy * outline.width + sx]
         val totalPixels = outline.width * outline.height
+
+        // 방어: 캐릭터 외곽 박스 밖을 터치한 경우엔 BFS 자체를 생략하고 자유 드로잉 폴백.
+        // 외부 흰 공간 시작 → 거대한 마스크가 만들어지는 가장 큰 원인을 차단.
+        val isInsideBbox = sx in outline.bboxLeft..outline.bboxRight &&
+            sy in outline.bboxTop..outline.bboxBottom
+        if (!isInsideBbox) {
+            return RegionResult(
+                region = CachedRegion(
+                    mask = null,
+                    width = outline.width,
+                    height = outline.height,
+                    bitmap = null,
+                    maskedPixelCount = 0,
+                ),
+                diagnostic = buildDiagnostic(sx, sy, seedAlpha, 0, totalPixels, outline),
+            )
+        }
 
         // 캐시 검색 — 이 seed 가 이미 계산된 어느 마스크에 포함되나
         mutex.withLock {
@@ -182,12 +215,13 @@ class OutlineBitmapCache @Inject constructor(
                 // 알파 채널만 (검은 선 = 알파 255, 흰 영역 = 알파 0).
                 // ARGB 의 상위 8 비트 추출.
                 val alpha = IntArray(w * h) { i -> (pixels[i] ushr 24) and 0xFF }
-                // 외곽선 픽셀 bbox (진단 로그에서 터치가 캐릭터 영역 안인지 판단)
+                // 캐릭터 외곽 박스 — 외곽선 본체(α ≥ 100)만으로 계산해 안티앨리어싱 영향 제거.
+                // 진단 로그용 + 박스 밖 터치 방어용. 여유 [BBOX_MARGIN] px 더해 외곽선 옆 터치 허용.
                 var bl = w; var bt = h; var br = -1; var bb = -1
                 for (y in 0 until h) {
                     val rowOff = y * w
                     for (x in 0 until w) {
-                        if (alpha[rowOff + x] >= OUTLINE_THRESHOLD) {
+                        if (alpha[rowOff + x] >= BBOX_OUTLINE_THRESHOLD) {
                             if (x < bl) bl = x
                             if (x > br) br = x
                             if (y < bt) bt = y
@@ -195,7 +229,11 @@ class OutlineBitmapCache @Inject constructor(
                         }
                     }
                 }
-                OutlineData(w, h, alpha, bl, bt, br, bb)
+                val bboxLeft = (bl - BBOX_MARGIN).coerceAtLeast(0)
+                val bboxTop = (bt - BBOX_MARGIN).coerceAtLeast(0)
+                val bboxRight = (br + BBOX_MARGIN).coerceAtMost(w - 1)
+                val bboxBottom = (bb + BBOX_MARGIN).coerceAtMost(h - 1)
+                OutlineData(w, h, alpha, bboxLeft, bboxTop, bboxRight, bboxBottom)
             }
         }
         mutex.withLock {
