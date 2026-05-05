@@ -2,16 +2,20 @@ package com.stagegrowth.kidcanvas.domain.util
 
 /**
  * 외곽선 판정 알파 임계값. alpha ≥ 이 값이면 외곽선으로 간주하여 BFS 가 통과하지 못함.
- * 80 → 50 으로 낮춰 안티앨리어싱 회색(50~80)도 외곽선으로 잡아 옆 영역으로 새는 것을 차단.
+ * 안티앨리어싱 회색은 통과시켜 정상 영역 인식이 안정적이도록 80 유지 (실제 누수 원인은
+ * 외부 빈 공간 터치이지 임계값이 아님).
  */
-const val OUTLINE_THRESHOLD: Int = 50
+const val OUTLINE_THRESHOLD: Int = 80
 
 /**
  * 마스크 폭주 방어용 비율 상한. BFS 결과가 전체 픽셀의 이 비율을 넘으면 외부 흰 공간으로
- * 새어나간 것으로 간주하고 null 반환 → 자유 드로잉 폴백. (5살 사용성: 어린이가 바깥을 터치해도
- * 캐릭터 전체가 한 색으로 칠해지지 않도록 한다.)
+ * 새어나간 것으로 간주하고 null 반환 → 자유 드로잉 폴백.
+ *
+ * 0.35 인 이유: 캐릭터 안 가장 큰 영역(머리·몸)도 보통 25~30% 안쪽이고 외부 빈 공간 마스크는
+ * 40~70%. 0.35 는 정상 큰 영역과 누수 마스크를 갈라내는 안전한 경계. (5살 사용성: 어린이가
+ * 바깥을 터치해도 캐릭터 전체가 한 색으로 칠해지지 않도록.)
  */
-private const val MAX_MASK_RATIO: Float = 0.5f
+private const val MAX_MASK_RATIO: Float = 0.35f
 
 /**
  * 4 방향 BFS Flood Fill — 외곽선 PNG 의 알파 채널을 이용해 한 영역(닫힌 폐곡선 안쪽)을 마스크로 추출.
@@ -23,7 +27,8 @@ private const val MAX_MASK_RATIO: Float = 0.5f
  * @param height 비트맵 세로
  * @param seedX 시작 픽셀 X
  * @param seedY 시작 픽셀 Y
- * @param threshold 알파 ≥ threshold 면 외곽선으로 간주 (기본 50, 안티앨리어싱 회색을 외곽선으로 처리)
+ * @param threshold 알파 ≥ threshold 면 외곽선으로 간주 (기본 80, 안티앨리어싱 회색까지 포함해
+ *                  영역 안쪽으로 통과)
  * @return 마스크 (true = 영역 안, false = 외곽선/영역 밖). 시작 픽셀이 외곽선 위거나
  *         마스크 비율이 [MAX_MASK_RATIO] 를 넘으면 null (자유 드로잉 폴백).
  */
@@ -68,7 +73,8 @@ fun floodFillRegion(
         }
     }
 
-    // 방어: 마스크가 전체의 50% 이상이면 외부 흰 공간으로 새어나간 것으로 간주.
+    // 방어: 마스크가 전체의 35% 이상이면 외부 흰 공간으로 새어나간 것으로 간주.
+    // (캐릭터 안 큰 영역도 25~30% 안쪽이라 35% 가 안전한 경계)
     // null 반환 → 호출 측에서 자유 드로잉 모드로 폴백.
     var maskedCount = 0
     for (b in mask) if (b) maskedCount++

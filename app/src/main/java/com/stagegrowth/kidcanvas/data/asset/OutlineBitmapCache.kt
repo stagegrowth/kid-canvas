@@ -23,10 +23,11 @@ import javax.inject.Singleton
 private const val BBOX_OUTLINE_THRESHOLD: Int = 100
 
 /**
- * bbox 여유 픽셀. 외곽선 살짝 안쪽까지 영역 인식을 인정해 자녀가 외곽선 바로 옆을 터치해도
- * 자유 드로잉으로 폴백되지 않도록 한다.
+ * bbox 여유 픽셀. 외곽선 바로 안쪽 정도만 영역 인식을 인정 — 살짝 바깥 터치는 자유 드로잉으로
+ * 폴백시켜 외부 빈 공간 누수를 차단. 너무 크면(20+) 외부 영역이 박스 안에 잡혀 누수 위험,
+ * 너무 작으면(0~3) 외곽선 바로 옆 정상 터치가 폴백돼 사용성 저하. 8 px 가 균형점.
  */
-private const val BBOX_MARGIN: Int = 20
+private const val BBOX_MARGIN: Int = 8
 
 /**
  * 외곽선 PNG 의 알파 채널을 한 번만 디코딩해 보관하고, seed → 영역 마스크 결과를 메모이제이션.
