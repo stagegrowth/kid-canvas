@@ -179,17 +179,38 @@ class DrawingViewModel @Inject constructor(
                 )
 
                 _uiState.update { st ->
-                    // 사용자가 이 stroke 끝낸 직후라면 무시 (race)
                     val cur = st.currentStroke
-                    if (cur == null || cur.seed != point) {
-                        Log.d("DrawDebug", "race: 마스크 도착 전 stroke 종료/교체됨 → maskBySeed 등록 SKIP")
-                        st
-                    } else if (bitmap == null) st // 폴백 → 자유 드로잉
-                    else st.copy(
-                        activeMask = bitmap,
-                        // 완료 시점에 maskBySeed 도 미리 채워둬서 onDragEnd 후 즉시 활용
-                        maskBySeed = st.maskBySeed + (point to bitmap),
-                    )
+
+                    // 케이스 1: 진행 중 stroke 의 seed 와 일치 — 정상 흐름.
+                    //          activeMask + maskBySeed 동시 등록.
+                    if (cur != null && cur.seed == point) {
+                        if (bitmap == null) {
+                            // 폴백 (bbox 외부 / 외곽선 위 / 35% 초과) — 자유 드로잉 유지
+                            st
+                        } else {
+                            st.copy(
+                                activeMask = bitmap,
+                                // 종료 후 즉시 활용되도록 maskBySeed 도 미리 채움
+                                maskBySeed = st.maskBySeed + (point to bitmap),
+                            )
+                        }
+                    }
+                    // 케이스 2: race — 마스크 계산이 onDragEnd 보다 늦음.
+                    //          이미 strokes 로 옮겨진 stroke 중 같은 seed 인 게 있으면 사후 등록.
+                    //          maskBySeed 가 StateFlow 의 일부라 변경 시 Compose 가 자동 재합성 →
+                    //          DrawingCanvas 의 stroke.seed → maskBySeed[seed] lookup 이 갱신돼
+                    //          다음 프레임에 마스크 클리핑이 적용됨 (외곽선 침범이 사라짐).
+                    else {
+                        val matched = st.strokes.lastOrNull { it.seed == point }
+                        if (matched != null && bitmap != null) {
+                            Log.d("DrawDebug", "race 복구: 종료된 stroke 에 마스크 사후 등록 (seed=$point)")
+                            st.copy(maskBySeed = st.maskBySeed + (point to bitmap))
+                        } else {
+                            // 매칭 stroke 없음: undo/reset 으로 사라졌거나 무관한 호출
+                            Log.d("DrawDebug", "race: 매칭 stroke 없음 → 마스크 폐기")
+                            st
+                        }
+                    }
                 }
             }
         }
