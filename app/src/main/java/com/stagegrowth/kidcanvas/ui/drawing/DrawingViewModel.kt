@@ -98,12 +98,16 @@ class DrawingViewModel @Inject constructor(
         if (needRegion && outlinePath != null) {
             val touchX = offset.x
             val touchY = offset.y
+            val canvasW = canvasSize.width
+            val canvasH = canvasSize.height
             viewModelScope.launch {
                 val result = outlineCache.regionFor(outlinePath, point.x, point.y)
                 val bitmap = result.region.bitmap
                 val diag = result.diagnostic
+                val regionW = result.region.width
+                val regionH = result.region.height
 
-                // 진단 로그 — 마스크가 화면 전체로 펼쳐지는 버그 추적용
+                // ── 기존 FloodFillDebug 로그 유지 ─────────────────────────────────
                 val totalPixels = diag.totalPixels.coerceAtLeast(1)
                 val maskRatioPct = diag.maskedPixelCount * 100 / totalPixels
                 val isInsideBbox = diag.bitmapX in diag.bboxLeft..diag.bboxRight &&
@@ -128,11 +132,59 @@ class DrawingViewModel @Inject constructor(
                     Log.d("FloodFillDebug", "마스크 생성 실패 — 자유 드로잉 모드로 폴백")
                 }
 
+                // ── DrawDebug: 첫 터치 단계 ─────────────────────────────────
+                // 좌표 변환·bbox 캐싱 검증.
+                val bboxValid = diag.bboxLeft <= diag.bboxRight && diag.bboxTop <= diag.bboxBottom
+                val passedBboxCheck = bboxValid && isInsideBbox
+                Log.d(
+                    "DrawDebug",
+                    """
+                        === 첫 터치 ===
+                        캐릭터 ID: $targetId
+                        Compose 터치 좌표: ($touchX, $touchY)
+                        캔버스 크기: $canvasW x $canvasH
+                        정규화 좌표: (${point.x}, ${point.y})
+                        비트맵 좌표: (${diag.bitmapX}, ${diag.bitmapY})
+                        비트맵 크기: $regionW x $regionH
+                        시드 픽셀 알파: ${diag.seedAlpha}
+                        임계값(외곽선 판정): ${diag.outlineThreshold}
+                        bbox 캐싱됨?: $bboxValid
+                        bbox 값: x=${diag.bboxLeft}~${diag.bboxRight}, y=${diag.bboxTop}~${diag.bboxBottom}
+                        bbox 안인가?: $isInsideBbox
+                        bbox 검증 통과?: $passedBboxCheck
+                    """.trimIndent(),
+                )
+
+                // ── DrawDebug: 마스크 결과 단계 ─────────────────────────────────
+                // 35% 검증·최종 activeMask 결정 사유.
+                val ratio = if (diag.totalPixels == 0) 0f else
+                    diag.maskedPixelCount.toFloat() / diag.totalPixels
+                val passed35 = bitmap != null  // null=폴백, 정상 마스크는 35% 이하만 통과
+                val decision = when {
+                    !passedBboxCheck -> "bbox 외부 → 폴백 (자유 드로잉)"
+                    diag.seedAlpha >= diag.outlineThreshold -> "외곽선 위 시작 → 폴백 (자유 드로잉)"
+                    bitmap == null -> "마스크 35% 초과 → 폴백 (자유 드로잉)"
+                    else -> "정상 마스크 생성"
+                }
+                Log.d(
+                    "DrawDebug",
+                    """
+                        === 마스크 결과 ===
+                        마스크 픽셀 수: ${diag.maskedPixelCount} / ${diag.totalPixels}
+                        마스크 비율: ${(ratio * 100f).toInt()}%
+                        35% 검증 통과?: $passed35
+                        최종 activeMask null?: ${bitmap == null}
+                        결정 사유: $decision
+                    """.trimIndent(),
+                )
+
                 _uiState.update { st ->
                     // 사용자가 이 stroke 끝낸 직후라면 무시 (race)
                     val cur = st.currentStroke
-                    if (cur == null || cur.seed != point) st
-                    else if (bitmap == null) st // 외곽선 위 시작 → 자유 드로잉 (마스크 없음)
+                    if (cur == null || cur.seed != point) {
+                        Log.d("DrawDebug", "race: 마스크 도착 전 stroke 종료/교체됨 → maskBySeed 등록 SKIP")
+                        st
+                    } else if (bitmap == null) st // 폴백 → 자유 드로잉
                     else st.copy(
                         activeMask = bitmap,
                         // 완료 시점에 maskBySeed 도 미리 채워둬서 onDragEnd 후 즉시 활용
@@ -154,6 +206,20 @@ class DrawingViewModel @Inject constructor(
     fun onDragEnd() {
         _uiState.update { state ->
             val cur = state.currentStroke ?: return@update state
+            // 진단: 종료 시점에 stroke.seed 가 maskBySeed 에 등록됐는지 확인.
+            // race 케이스(마스크 도착 전 종료) 면 자유 드로잉으로 그려져 외곽선을 침범할 수 있음.
+            val seed = cur.seed
+            val hasMask = seed != null && state.maskBySeed.containsKey(seed)
+            Log.d(
+                "DrawDebug",
+                """
+                    === stroke 종료 ===
+                    stroke seed: $seed
+                    maskBySeed 에 등록됨?: $hasMask
+                    stroke 점 개수: ${cur.points.size}
+                    도구: ${cur.tool}
+                """.trimIndent(),
+            )
             state.copy(
                 strokes = state.strokes + cur,
                 currentStroke = null,
