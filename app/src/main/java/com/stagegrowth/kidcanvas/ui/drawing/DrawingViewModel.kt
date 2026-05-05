@@ -1,5 +1,6 @@
 package com.stagegrowth.kidcanvas.ui.drawing
 
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.SavedStateHandle
@@ -95,9 +96,38 @@ class DrawingViewModel @Inject constructor(
         }
 
         if (needRegion && outlinePath != null) {
+            val touchX = offset.x
+            val touchY = offset.y
             viewModelScope.launch {
-                val region = outlineCache.regionFor(outlinePath, point.x, point.y)
-                val bitmap = region.bitmap
+                val result = outlineCache.regionFor(outlinePath, point.x, point.y)
+                val bitmap = result.region.bitmap
+                val diag = result.diagnostic
+
+                // 진단 로그 — 마스크가 화면 전체로 펼쳐지는 버그 추적용
+                val totalPixels = diag.totalPixels.coerceAtLeast(1)
+                val maskRatioPct = diag.maskedPixelCount * 100 / totalPixels
+                val isInsideBbox = diag.bitmapX in diag.bboxLeft..diag.bboxRight &&
+                    diag.bitmapY in diag.bboxTop..diag.bboxBottom
+                Log.d(
+                    "FloodFillDebug",
+                    """
+                        === Flood Fill Result ===
+                        캐릭터 ID: $targetId
+                        터치 좌표 (Compose px): ($touchX, $touchY)
+                        비트맵 좌표 (px): (${diag.bitmapX}, ${diag.bitmapY})
+                        시작 픽셀 알파: ${diag.seedAlpha}
+                        임계값: ${diag.outlineThreshold}
+                        마스크 픽셀 수: ${diag.maskedPixelCount} / ${diag.totalPixels}
+                        마스크 비율: ${maskRatioPct}%
+                        캐릭터 외곽 박스: x=${diag.bboxLeft}~${diag.bboxRight}, y=${diag.bboxTop}~${diag.bboxBottom}
+                        터치가 외곽 박스 안: $isInsideBbox
+                        =========================
+                    """.trimIndent(),
+                )
+                if (bitmap == null) {
+                    Log.d("FloodFillDebug", "마스크 생성 실패 — 자유 드로잉 모드로 폴백")
+                }
+
                 _uiState.update { st ->
                     // 사용자가 이 stroke 끝낸 직후라면 무시 (race)
                     val cur = st.currentStroke
@@ -192,8 +222,8 @@ class DrawingViewModel @Inject constructor(
     /** 복원된 stroke 들의 unique seed 마스크를 미리 계산해 maskBySeed 에 채움. */
     private suspend fun warmMasks(outlinePath: String, seeds: List<NormalizedPoint>) {
         for (seed in seeds) {
-            val region = outlineCache.regionFor(outlinePath, seed.x, seed.y)
-            val bm = region.bitmap ?: continue
+            val result = outlineCache.regionFor(outlinePath, seed.x, seed.y)
+            val bm = result.region.bitmap ?: continue
             _uiState.update { it.copy(maskBySeed = it.maskBySeed + (seed to bm)) }
         }
     }

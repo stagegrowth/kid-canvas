@@ -1,5 +1,8 @@
 package com.stagegrowth.kidcanvas.domain.util
 
+/** 외곽선 판정 알파 임계값. 진단 로그와 호출 측 모두 같은 값을 쓰도록 공용 상수로 노출. */
+const val OUTLINE_THRESHOLD: Int = 80
+
 /**
  * 4 방향 BFS Flood Fill — 외곽선 PNG 의 알파 채널을 이용해 한 영역(닫힌 폐곡선 안쪽)을 마스크로 추출.
  *
@@ -19,7 +22,7 @@ fun floodFillRegion(
     height: Int,
     seedX: Int,
     seedY: Int,
-    threshold: Int = 80,
+    threshold: Int = OUTLINE_THRESHOLD,
 ): BooleanArray? {
     if (seedX !in 0 until width || seedY !in 0 until height) return null
     val seedIdx = seedY * width + seedX

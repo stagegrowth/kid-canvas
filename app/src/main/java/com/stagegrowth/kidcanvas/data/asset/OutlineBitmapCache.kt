@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import com.stagegrowth.kidcanvas.domain.util.OUTLINE_THRESHOLD
 import com.stagegrowth.kidcanvas.domain.util.erodeMask
 import com.stagegrowth.kidcanvas.domain.util.floodFillRegion
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,11 +30,19 @@ class OutlineBitmapCache @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
 
-    /** 외곽선 비트맵의 알파 배열만 추출해 보관. 색 정보는 영역 계산에 불필요. */
+    /**
+     * 외곽선 비트맵의 알파 배열 + 외곽선 픽셀 bbox(진단용).
+     * bbox 는 alpha ≥ OUTLINE_THRESHOLD 인 픽셀들의 최소/최대 x,y. 캐릭터가 없는 빈 영역이면
+     * left/top 이 right/bottom 보다 큰 채로 남아 isInsideBbox 판정이 항상 false.
+     */
     private data class OutlineData(
         val width: Int,
         val height: Int,
         val alpha: IntArray,
+        val bboxLeft: Int,
+        val bboxTop: Int,
+        val bboxRight: Int,
+        val bboxBottom: Int,
     )
 
     /**
@@ -45,6 +54,7 @@ class OutlineBitmapCache @Inject constructor(
         val width: Int,
         val height: Int,
         val bitmap: ImageBitmap?,
+        val maskedPixelCount: Int,
     ) {
         fun contains(px: Int, py: Int): Boolean {
             val m = mask ?: return false
@@ -53,18 +63,37 @@ class OutlineBitmapCache @Inject constructor(
         }
     }
 
+    /** Flood Fill 진단 정보 (마스크 폭주 버그 추적용). */
+    data class FloodFillDiagnostic(
+        val bitmapX: Int,
+        val bitmapY: Int,
+        val seedAlpha: Int,
+        val outlineThreshold: Int,
+        val maskedPixelCount: Int,
+        val totalPixels: Int,
+        val bboxLeft: Int,
+        val bboxTop: Int,
+        val bboxRight: Int,
+        val bboxBottom: Int,
+    )
+
+    data class RegionResult(
+        val region: CachedRegion,
+        val diagnostic: FloodFillDiagnostic,
+    )
+
     private val mutex = Mutex()
     private var currentAssetPath: String? = null
     private var currentOutline: OutlineData? = null
     private val regions: MutableList<CachedRegion> = mutableListOf()
 
     /**
-     * 정규화 좌표(0~1) seed → 그 픽셀이 속한 영역의 CachedRegion.
-     * 외곽선 위에서 시작한 경우엔 mask=null 반환 (자유 드로잉).
+     * 정규화 좌표(0~1) seed → 그 픽셀이 속한 영역의 CachedRegion + 진단 정보.
+     * 외곽선 위에서 시작한 경우엔 region.mask=null 반환 (자유 드로잉).
      *
      * 호출 흐름:
      *   1) assetPath 가 바뀌었으면 이전 캐릭터 캐시 비움 (메모리 절약)
-     *   2) 외곽선 PNG 알파 배열 로드 (캐시)
+     *   2) 외곽선 PNG 알파 배열 + bbox 로드 (캐시)
      *   3) 같은 영역에 이미 계산된 마스크가 있으면 그걸 반환
      *   4) 없으면 BFS Flood Fill + 1 px 침식, 결과를 캐시에 추가
      */
@@ -72,25 +101,34 @@ class OutlineBitmapCache @Inject constructor(
         assetPath: String,
         seedNormX: Float,
         seedNormY: Float,
-    ): CachedRegion {
+    ): RegionResult {
         val outline = loadOutlineMaybeSwitchCharacter(assetPath)
         val sx = (seedNormX * outline.width).toInt().coerceIn(0, outline.width - 1)
         val sy = (seedNormY * outline.height).toInt().coerceIn(0, outline.height - 1)
+        val seedAlpha = outline.alpha[sy * outline.width + sx]
+        val totalPixels = outline.width * outline.height
 
         // 캐시 검색 — 이 seed 가 이미 계산된 어느 마스크에 포함되나
         mutex.withLock {
-            regions.firstOrNull { it.contains(sx, sy) }?.let { return@regionFor it }
+            regions.firstOrNull { it.contains(sx, sy) }?.let { cached ->
+                return RegionResult(
+                    region = cached,
+                    diagnostic = buildDiagnostic(sx, sy, seedAlpha, cached.maskedPixelCount, totalPixels, outline),
+                )
+            }
         }
 
         // 새로 계산 (락 없이 무거운 작업)
         val computed = withContext(Dispatchers.Default) {
-            val raw = floodFillRegion(outline.alpha, outline.width, outline.height, sx, sy)
+            val raw = floodFillRegion(outline.alpha, outline.width, outline.height, sx, sy, OUTLINE_THRESHOLD)
             val eroded = raw?.let { erodeMask(it, outline.width, outline.height, iterations = 1) }
+            val count = eroded?.count { it } ?: 0
             CachedRegion(
                 mask = eroded,
                 width = outline.width,
                 height = outline.height,
                 bitmap = eroded?.let { maskToImageBitmap(it, outline.width, outline.height) },
+                maskedPixelCount = count,
             )
         }
 
@@ -100,8 +138,31 @@ class OutlineBitmapCache @Inject constructor(
                 regions.add(computed)
             }
         }
-        return computed
+        return RegionResult(
+            region = computed,
+            diagnostic = buildDiagnostic(sx, sy, seedAlpha, computed.maskedPixelCount, totalPixels, outline),
+        )
     }
+
+    private fun buildDiagnostic(
+        sx: Int,
+        sy: Int,
+        seedAlpha: Int,
+        maskedPixelCount: Int,
+        totalPixels: Int,
+        outline: OutlineData,
+    ): FloodFillDiagnostic = FloodFillDiagnostic(
+        bitmapX = sx,
+        bitmapY = sy,
+        seedAlpha = seedAlpha,
+        outlineThreshold = OUTLINE_THRESHOLD,
+        maskedPixelCount = maskedPixelCount,
+        totalPixels = totalPixels,
+        bboxLeft = outline.bboxLeft,
+        bboxTop = outline.bboxTop,
+        bboxRight = outline.bboxRight,
+        bboxBottom = outline.bboxBottom,
+    )
 
     private suspend fun loadOutlineMaybeSwitchCharacter(assetPath: String): OutlineData {
         mutex.withLock {
@@ -121,7 +182,20 @@ class OutlineBitmapCache @Inject constructor(
                 // 알파 채널만 (검은 선 = 알파 255, 흰 영역 = 알파 0).
                 // ARGB 의 상위 8 비트 추출.
                 val alpha = IntArray(w * h) { i -> (pixels[i] ushr 24) and 0xFF }
-                OutlineData(w, h, alpha)
+                // 외곽선 픽셀 bbox (진단 로그에서 터치가 캐릭터 영역 안인지 판단)
+                var bl = w; var bt = h; var br = -1; var bb = -1
+                for (y in 0 until h) {
+                    val rowOff = y * w
+                    for (x in 0 until w) {
+                        if (alpha[rowOff + x] >= OUTLINE_THRESHOLD) {
+                            if (x < bl) bl = x
+                            if (x > br) br = x
+                            if (y < bt) bt = y
+                            if (y > bb) bb = y
+                        }
+                    }
+                }
+                OutlineData(w, h, alpha, bl, bt, br, bb)
             }
         }
         mutex.withLock {
